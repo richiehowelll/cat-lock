@@ -65,8 +65,8 @@ class KeyboardLock:
         draw = ImageDraw.Draw(image)
         draw.rectangle((16, 16, 48, 48), fill="white")
         menu = Menu(
+            MenuItem("About", open_about),
             MenuItem("Quit", self.quit_program),
-            MenuItem("About", open_about)
         )
         tray_icon = Icon("Keyboard Locker", image, "Keyboard Locker", menu)
         tray_icon.run()
