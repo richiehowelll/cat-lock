@@ -1,15 +1,14 @@
+import gc
 import json
-import string
-import tkinter as tk
-from collections import deque
-from tkinter import END
-
-import keyboard
 import threading
 import time
+import tkinter as tk
 import webbrowser
-from pystray import Icon, Menu, MenuItem
+from collections import deque
+
+import keyboard
 from PIL import Image, ImageDraw
+from pystray import Icon, Menu, MenuItem
 
 
 def open_about():
@@ -70,6 +69,7 @@ class KeyboardLock:
                 self.set_hotkey(new_hotkey)
                 print(f"Hotkey changed to: {new_hotkey}")
                 hotkey_window.destroy()
+                gc.collect()
                 self.hotkey_thread.start()
             else:
                 label.config(text="Invalid hotkey, try again.")
@@ -111,6 +111,7 @@ class KeyboardLock:
 
         if hasattr(self, 'root') and self.root.winfo_exists():
             self.root.destroy()
+            gc.collect()
 
     def show_overlay(self):
         self.root = tk.Tk()
