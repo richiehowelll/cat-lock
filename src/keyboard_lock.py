@@ -56,7 +56,7 @@ class KeyboardLock:
                 self.show_overlay()
 
     def create_tray_icon(self):
-        image = Image.new("RGB", (64, 64), "black")
+        image = Image.open("../resources/img/icon.png")
         draw = ImageDraw.Draw(image)
         draw.rectangle((16, 16, 48, 48), fill="white")
         menu = Menu(MenuItem("Quit", self.quit_program))
