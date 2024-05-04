@@ -2,8 +2,13 @@ import tkinter as tk
 import keyboard
 import threading
 import time
+import webbrowser
 from pystray import Icon, Menu, MenuItem
 from PIL import Image, ImageDraw
+
+
+def open_about():
+    webbrowser.open("https://github.com/richiehowelll/CatLock", new=2)
 
 
 class KeyboardLock:
@@ -59,7 +64,10 @@ class KeyboardLock:
         image = Image.open("../resources/img/icon.png")
         draw = ImageDraw.Draw(image)
         draw.rectangle((16, 16, 48, 48), fill="white")
-        menu = Menu(MenuItem("Quit", self.quit_program))
+        menu = Menu(
+            MenuItem("Quit", self.quit_program),
+            MenuItem("About", open_about)
+        )
         tray_icon = Icon("Keyboard Locker", image, "Keyboard Locker", menu)
         tray_icon.run()
 
@@ -68,6 +76,7 @@ class KeyboardLock:
         self.unlock_keyboard()
         icon.stop()
         print("Program Exiting")
+
 
     def start(self):
         print("Program Starting")
