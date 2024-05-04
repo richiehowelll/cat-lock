@@ -1,4 +1,9 @@
+import json
+import string
 import tkinter as tk
+from collections import deque
+from tkinter import END
+
 import keyboard
 import threading
 import time
@@ -18,6 +23,74 @@ class KeyboardLock:
         self.hotkey_thread = threading.Thread(target=self.start_hotkey_listener, daemon=True)
         self.tray_icon_thread = threading.Thread(target=self.create_tray_icon, daemon=True)
         self.root = None
+        self.hotkey = "ctrl+shift+l"  # Default hotkey
+        self.load_hotkey()
+
+    def load_hotkey(self):
+        try:
+            with open("config.json", "r") as f:
+                config = json.load(f)
+                if "hotkey" in config:
+                    self.hotkey = config["hotkey"]
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            pass  # Default to the built-in hotkey
+
+    def save_hotkey(self):
+        with open("config.json", "w") as f:
+            json.dump({"hotkey": self.hotkey}, f)
+
+    def set_hotkey(self, new_hotkey):
+        self.hotkey = new_hotkey
+        self.save_hotkey()
+
+    def change_hotkey(self):
+        self.hotkey_thread.join(0.1)  # Stop the hotkey listener to avoid conflicts
+        self.hotkey_thread = threading.Thread(target=self.start_hotkey_listener, daemon=True)
+
+        hotkey_window = tk.Tk()
+        hotkey_window.title("Set Hotkey")
+        hotkey_window.geometry("300x150")
+
+        label = tk.Label(hotkey_window, text="Enter a new hotkey:")
+        label.pack(pady=10)
+
+        hotkey_entry = tk.Entry(hotkey_window, width=20)
+
+        # Means of communication, between the gui & update threads:
+        message_queue = deque()
+
+        def event_handler(event):  # runs in main thread
+            hotkey_entry.insert(tk.END, message_queue.popleft())
+
+        hotkey_entry.bind("<<hotkey-event>>", event_handler)
+
+        def set_hotkey_from_gui():
+            new_hotkey = hotkey_entry.get()
+            if new_hotkey:
+                self.set_hotkey(new_hotkey)
+                print(f"Hotkey changed to: {new_hotkey}")
+                hotkey_window.destroy()
+                self.hotkey_thread.start()
+            else:
+                label.config(text="Invalid hotkey, try again.")
+
+        set_hotkey_button = tk.Button(hotkey_window, text="Set Hotkey", command=set_hotkey_from_gui)
+        hotkey_entry.pack(pady=10)
+        set_hotkey_button.pack(pady=10)
+
+        def read_entry_non_blocking(entry):
+            hotkey = keyboard.read_hotkey()
+            message_queue.append(hotkey)
+            time.sleep(1)  # Simulated delay (of 1 sec) between updates.
+            hotkey_entry.event_generate("<<hotkey-event>>")
+
+        def start_entry_listener(entry):
+            thread = threading.Thread(target=read_entry_non_blocking, args=(entry,), daemon=True)
+            thread.start()
+
+        start_entry_listener(hotkey_entry)
+
+        hotkey_window.mainloop()
 
     def lock_keyboard(self):
         self.blocked_keys.clear()
@@ -32,9 +105,7 @@ class KeyboardLock:
         self.blocked_keys.clear()
 
         # Manually release the hotkey keys to ensure they're not stuck
-        keyboard.release("ctrl")
-        keyboard.release("shift")
-        keyboard.release("l")
+        keyboard.release(self.hotkey)
 
         print("Keyboard Unlocked")
 
@@ -56,7 +127,7 @@ class KeyboardLock:
 
     def start_hotkey_listener(self):
         while self.program_running:
-            keyboard.wait("ctrl+shift+l")
+            keyboard.wait(self.hotkey)
             if self.program_running:
                 self.show_overlay()
 
@@ -66,6 +137,7 @@ class KeyboardLock:
         draw.rectangle((16, 16, 48, 48), fill="white")
         menu = Menu(
             MenuItem("About", open_about),
+            MenuItem("Change Hotkey", self.change_hotkey),
             MenuItem("Quit", self.quit_program),
         )
         tray_icon = Icon("Keyboard Locker", image, "Keyboard Locker", menu)
@@ -77,7 +149,6 @@ class KeyboardLock:
         icon.stop()
         print("Program Exiting")
 
-
     def start(self):
         print("Program Starting")
         self.hotkey_thread.start()
@@ -85,3 +156,4 @@ class KeyboardLock:
 
         while self.program_running:
             time.sleep(1)
+
