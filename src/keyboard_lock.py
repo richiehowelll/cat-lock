@@ -95,7 +95,7 @@ class KeyboardLock:
 
         set_hotkey_button = tk.Button(hotkey_window, text="Set Hotkey", command=set_hotkey_from_gui)
         hotkey_entry.pack(pady=10)
-        hotkey_entry.focus()
+        hotkey_entry.focus_force()
         set_hotkey_button.pack(pady=10)
 
         def read_entry_non_blocking(entry):
@@ -103,6 +103,7 @@ class KeyboardLock:
             message_queue.append(hotkey)
             time.sleep(1)  # Simulated delay (of 1 sec) between updates.
             print(hotkey)
+            # TODO: RuntimeError: main thread is not in main loop
             hotkey_entry.event_generate("<<hotkey-event>>")
 
         entry_listener_thread = threading.Thread(target=read_entry_non_blocking, args=(hotkey_entry,), daemon=True)
