@@ -19,6 +19,7 @@ class KeyboardLock:
     def __init__(self):
         self.blocked_keys = set()
         self.program_running = True
+        self.listen_for_hotkey = True
         self.hotkey_thread = threading.Thread(target=self.start_hotkey_listener, daemon=True)
         self.tray_icon_thread = threading.Thread(target=self.create_tray_icon, daemon=True)
         self.root = None
@@ -43,7 +44,11 @@ class KeyboardLock:
         self.save_hotkey()
 
     def change_hotkey(self):
-        self.hotkey_thread.join(0.1)  # Stop the hotkey listener to avoid conflicts
+        self.listen_for_hotkey = False
+        if self.hotkey_thread.is_alive():
+            keyboard.send(self.hotkey)
+            self.hotkey_thread.join()  # Wait for the hotkey listener to stop
+
         self.hotkey_thread = threading.Thread(target=self.start_hotkey_listener, daemon=True)
 
         hotkey_window = tk.Tk()
@@ -70,6 +75,9 @@ class KeyboardLock:
                 print(f"Hotkey changed to: {new_hotkey}")
                 hotkey_window.destroy()
                 gc.collect()
+                self.listen_for_hotkey = True
+                if self.hotkey_thread.is_alive():
+                    self.hotkey_thread.join()
                 self.hotkey_thread.start()
             else:
                 label.config(text="Invalid hotkey, try again.")
@@ -127,9 +135,11 @@ class KeyboardLock:
         self.root.mainloop()
 
     def start_hotkey_listener(self):
-        while self.program_running:
+        while self.program_running and self.listen_for_hotkey:
+            if not self.listen_for_hotkey:  # Check if we should stop
+                break
             keyboard.wait(self.hotkey)
-            if self.program_running:
+            if self.program_running and self.listen_for_hotkey:
                 self.show_overlay()
 
     def create_tray_icon(self):
