@@ -4,7 +4,7 @@ import threading
 import time
 import tkinter as tk
 import webbrowser
-from collections import deque
+from queue import Queue
 
 import keyboard
 from PIL import Image, ImageDraw
@@ -43,14 +43,6 @@ class KeyboardLock:
         self.hotkey = new_hotkey
         self.save_hotkey()
 
-    def on_closing_hotkey_gui(self, hotkey_window):
-        hotkey_window.destroy()
-        gc.collect()
-        self.listen_for_hotkey = True
-        if self.hotkey_thread.is_alive():
-            self.hotkey_thread.join()
-        self.hotkey_thread.start()
-
     def change_hotkey(self):
         self.listen_for_hotkey = False
         if self.hotkey_thread.is_alive():
@@ -62,19 +54,30 @@ class KeyboardLock:
         hotkey_window.title("Set Hotkey")
         hotkey_window.geometry("300x150")
         hotkey_window.attributes('-topmost', True)
-        hotkey_window.protocol("WM_DELETE_WINDOW", lambda arg=hotkey_window: self.on_closing_hotkey_gui(arg))
+
+        def on_closing_hotkey_gui():
+            hotkey_window.destroy()
+            gc.collect()
+            self.listen_for_hotkey = True
+            if self.hotkey_thread.is_alive():
+                self.hotkey_thread.join()
+            self.hotkey_thread.start()
+
+        hotkey_window.protocol("WM_DELETE_WINDOW", on_closing_hotkey_gui)
 
         label = tk.Label(hotkey_window, text="Enter a new hotkey:")
         label.pack(pady=10)
 
         hotkey_entry = tk.Entry(hotkey_window, width=20)
         # Means of communication, between the gui & update threads:
-        message_queue = deque()
+        message_queue = Queue()
 
-        def event_handler(event):  # runs in main thread
-            hotkey_entry.insert(tk.END, message_queue.popleft())
-
-        hotkey_entry.bind("<<hotkey-event>>", event_handler)
+        def poll_queue():  # runs in main thread
+            while True:
+                if not message_queue.empty():
+                    hotkey_entry.insert(tk.END, message_queue.get(block=False))
+                break
+            hotkey_window.after(100, poll_queue)
 
         def set_hotkey_from_gui():
             new_hotkey = hotkey_entry.get()
@@ -98,18 +101,17 @@ class KeyboardLock:
         hotkey_entry.focus_force()
         set_hotkey_button.pack(pady=10)
 
-        def read_entry_non_blocking(entry):
+        def read_user_inp():
             hotkey = keyboard.read_hotkey()
-            message_queue.append(hotkey)
+            message_queue.put(hotkey)
             time.sleep(1)  # Simulated delay (of 1 sec) between updates.
             print(hotkey)
-            # TODO: RuntimeError: main thread is not in main loop
-            hotkey_entry.event_generate("<<hotkey-event>>")
 
-        entry_listener_thread = threading.Thread(target=read_entry_non_blocking, args=(hotkey_entry,), daemon=True)
+        entry_listener_thread = threading.Thread(target=read_user_inp, daemon=True)
         entry_listener_thread.start()
-
+        hotkey_window.after(100, poll_queue)
         hotkey_window.mainloop()
+        entry_listener_thread.join()
 
     def lock_keyboard(self):
         self.blocked_keys.clear()
