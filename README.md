@@ -6,4 +6,7 @@ CatLock is a daemon that helps you lock your keyboard with a hotkey, preventing 
 - Lock the keyboard using a customizable hotkey (`Ctrl + Shift + L` by default).
 - Display an overlay indicating the keyboard is locked.
 - Click the overlay to unlock the keyboard.
-- System tray icon with a quit option.
+- System tray menu with config options:
+  - Customize overlay opacity
+  - Enable/Disable system notifications when keyboard is locked
+  - Set custom lock hotkey
