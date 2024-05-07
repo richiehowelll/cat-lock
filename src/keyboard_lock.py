@@ -18,23 +18,6 @@ def open_about():
     webbrowser.open("https://github.com/richiehowelll/CatLock", new=2)
 
 
-def send_lock_notification():
-    plyer.notification.notify(
-        app_name="CatLock",
-        title="Keyboard Locked",
-        message="Click on screen to unlock",
-        app_icon="../resources/img/icon.ico",
-        timeout=3,
-    )
-    time.sleep(.1)
-
-
-def send_notification_in_thread():
-    notification_thread = threading.Thread(target=send_lock_notification, daemon=True)
-    notification_thread.start()
-    notification_thread.join()
-
-
 class KeyboardLock:
     def __init__(self):
         self.blocked_keys = set()
@@ -45,19 +28,21 @@ class KeyboardLock:
         self.tray_icon_thread = threading.Thread(target=self.create_tray_icon, daemon=True)
         self.root = None
         self.hotkey = DEFAULT_HOTKEY
-        self.load_hotkey()
+        self.load_config()
         self.show_overlay_queue = Queue()
         self.show_change_hotkey_queue = Queue()
         self.start_hotkey_listener_thread()
         self.tray_icon_thread.start()
         self.opacity = .5
+        self.notifications_enabled = True
 
-    def load_hotkey(self):
+    def load_config(self):
         try:
             with open(CONFIG_FILE, "r") as f:
                 config = json.load(f)
                 self.hotkey = config.get("hotkey", DEFAULT_HOTKEY)
                 self.opacity = config.get("opacity", 0.5)
+                self.notifications_enabled = config.get("notificationEnabled", True)
         except (FileNotFoundError, json.JSONDecodeError):
             pass  # Fall back to the default hotkey
 
@@ -66,8 +51,26 @@ class KeyboardLock:
             config = {
                 "hotkey": self.hotkey,
                 "opacity": self.opacity,
+                "notificationEnabled": self.notifications_enabled,
             }
             json.dump(config, f)
+
+    def send_lock_notification(self):
+        if self.notifications_enabled:
+            plyer.notification.notify(
+                app_name="CatLock",
+                title="Keyboard Locked",
+                message="Click on screen to unlock",
+                app_icon="../resources/img/icon.ico",
+                timeout=3,
+            )
+            time.sleep(.1)
+
+    def send_notification_in_thread(self):
+        if self.notifications_enabled:
+            notification_thread = threading.Thread(target=self.send_lock_notification, daemon=True)
+            notification_thread.start()
+            notification_thread.join()
 
     def set_opacity(self, opacity):
         self.opacity = opacity
@@ -75,6 +78,10 @@ class KeyboardLock:
 
     def set_hotkey(self, new_hotkey):
         self.hotkey = new_hotkey
+        self.save_config()
+
+    def toggle_notifications(self):
+        self.notifications_enabled = not self.notifications_enabled
         self.save_config()
 
     def change_hotkey(self):
@@ -143,7 +150,7 @@ class KeyboardLock:
         for i in range(150):
             keyboard.block_key(i)
             self.blocked_keys.add(i)
-        send_notification_in_thread()
+        self.send_notification_in_thread()
 
     def unlock_keyboard(self, event=None):
         for key in self.blocked_keys:
@@ -195,6 +202,11 @@ class KeyboardLock:
         menu = Menu(
             MenuItem("About", open_about),
             MenuItem("Change Hotkey", self.send_change_hotkey_signal),
+            MenuItem(
+                "Enable/Disable Notifications",
+                self.toggle_notifications,
+                checked=lambda item: self.notifications_enabled,  # Display current status
+            ),
             MenuItem("Set Opacity", Menu(
                 MenuItem("5%", lambda: self.set_opacity(0.05)),
                 MenuItem("10%", lambda: self.set_opacity(0.1)),
