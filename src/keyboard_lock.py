@@ -20,11 +20,16 @@ class KeyboardLock:
         self.blocked_keys = set()
         self.program_running = True
         self.listen_for_hotkey = True
-        self.hotkey_thread = threading.Thread(target=self.start_hotkey_listener, daemon=True)
+        self.hotkey_lock = threading.Lock()
+        self.hotkey_thread = None
         self.tray_icon_thread = threading.Thread(target=self.create_tray_icon, daemon=True)
         self.root = None
         self.hotkey = "ctrl+shift+l"  # Default hotkey
         self.load_hotkey()
+        self.show_overlay_queue = Queue()
+        self.show_change_hotkey_queue = Queue()
+        self.start_hotkey_listener_thread()
+        self.tray_icon_thread.start()
 
     def load_hotkey(self):
         try:
@@ -48,58 +53,50 @@ class KeyboardLock:
         if self.hotkey_thread.is_alive():
             self.hotkey_thread.join()  # Wait for the hotkey listener to stop
 
-        self.hotkey_thread = threading.Thread(target=self.start_hotkey_listener, daemon=True)
+        with self.hotkey_lock:
+            self.hotkey_thread = threading.Thread(target=self.start_hotkey_listener_thread, daemon=True)
 
-        hotkey_window = tk.Tk()
-        hotkey_window.title("Set Hotkey")
-        hotkey_window.geometry("300x150")
-        hotkey_window.attributes('-topmost', True)
+            hotkey_window = tk.Tk()
+            hotkey_window.title("Set Hotkey")
+            hotkey_window.geometry("300x150")
+            hotkey_window.attributes('-topmost', True)
 
-        def on_closing_hotkey_gui():
-            hotkey_window.destroy()
-            gc.collect()
-            self.listen_for_hotkey = True
-            if self.hotkey_thread.is_alive():
-                self.hotkey_thread.join()
-            self.hotkey_thread.start()
-
-        hotkey_window.protocol("WM_DELETE_WINDOW", on_closing_hotkey_gui)
-
-        label = tk.Label(hotkey_window, text="Enter a new hotkey:")
-        label.pack(pady=10)
-
-        hotkey_entry = tk.Entry(hotkey_window, width=20)
-        # Means of communication, between the gui & update threads:
-        message_queue = Queue()
-
-        def poll_queue():  # runs in main thread
-            while True:
-                if not message_queue.empty():
-                    hotkey_entry.insert(tk.END, message_queue.get(block=False))
-                break
-            hotkey_window.after(100, poll_queue)
-
-        def set_hotkey_from_gui():
-            new_hotkey = hotkey_entry.get()
-            if new_hotkey:
-                for key in self.hotkey.split("+"):
-                    keyboard.release(key)
-                    print(f"Key Unlocked {key}")
-                self.set_hotkey(new_hotkey)
-                print(f"Hotkey changed to: {new_hotkey}")
+            def on_closing():
                 hotkey_window.destroy()
-                gc.collect()
-                self.listen_for_hotkey = True
-                if self.hotkey_thread.is_alive():
-                    self.hotkey_thread.join()
-                self.hotkey_thread.start()
-            else:
-                label.config(text="Invalid hotkey, try again.")
+                self.start_hotkey_listener_thread()
 
-        set_hotkey_button = tk.Button(hotkey_window, text="Set Hotkey", command=set_hotkey_from_gui)
-        hotkey_entry.pack(pady=10)
-        hotkey_entry.focus_force()
-        set_hotkey_button.pack(pady=10)
+            hotkey_window.protocol("WM_DELETE_WINDOW", on_closing)
+
+            label = tk.Label(hotkey_window, text="Enter a new hotkey:")
+            label.pack(pady=10)
+
+            hotkey_entry = tk.Entry(hotkey_window, width=20)
+            # Means of communication, between the gui & update threads:
+            message_queue = Queue()
+
+            def poll_queue():  # runs in main thread
+                while True:
+                    if not message_queue.empty():
+                        hotkey_entry.insert(tk.END, message_queue.get(block=False))
+                    break
+                hotkey_window.after(100, poll_queue)
+
+            def set_hotkey_from_gui():
+                new_hotkey = hotkey_entry.get()
+                if new_hotkey:
+                    for key in self.hotkey.split("+"):
+                        keyboard.release(key)
+                        print(f"Key Unlocked {key}")
+                    self.set_hotkey(new_hotkey)
+                    print(f"Hotkey changed to: {new_hotkey}")
+                    on_closing()
+                else:
+                    label.config(text="Invalid hotkey, try again.")
+
+            set_hotkey_button = tk.Button(hotkey_window, text="Set Hotkey", command=set_hotkey_from_gui)
+            hotkey_entry.pack(pady=10)
+            hotkey_entry.focus_force()
+            set_hotkey_button.pack(pady=10)
 
         def read_user_inp():
             hotkey = keyboard.read_hotkey()
@@ -129,9 +126,7 @@ class KeyboardLock:
         keyboard.release(self.hotkey)
         print(f"Keyboard Unlocked {self.hotkey}")
 
-        if hasattr(self, 'root') and self.root.winfo_exists():
-            self.root.destroy()
-            gc.collect()
+        self.root.destroy()
 
     def show_overlay(self):
         self.root = tk.Tk()
@@ -146,10 +141,24 @@ class KeyboardLock:
 
         self.root.mainloop()
 
-    def start_hotkey_listener(self):
-        keyboard.add_hotkey(self.hotkey, self.show_overlay)
-        while self.program_running and self.listen_for_hotkey:
-            time.sleep(1)
+    def send_hotkey_signal(self):
+        self.show_overlay_queue.put(True)
+
+    def send_change_hotkey_signal(self):
+        self.show_change_hotkey_queue.put(True)
+
+    def start_hotkey_listener_thread(self):
+        with self.hotkey_lock:
+            self.listen_for_hotkey = True
+            if self.hotkey_thread and threading.current_thread() is not self.hotkey_thread and self.hotkey_thread.is_alive():
+                self.hotkey_thread.join()
+            self.hotkey_thread = threading.Thread(target=self.hotkey_listener, daemon=True)
+            self.hotkey_thread.start()
+
+    def hotkey_listener(self):
+        keyboard.add_hotkey(self.hotkey, self.send_hotkey_signal)
+        while self.listen_for_hotkey:
+            time.sleep(1)  # Avoid excessive CPU usage
         keyboard.remove_hotkey(self.hotkey)
 
     def create_tray_icon(self):
@@ -158,7 +167,7 @@ class KeyboardLock:
         draw.rectangle((16, 16, 48, 48), fill="white")
         menu = Menu(
             MenuItem("About", open_about),
-            MenuItem("Change Hotkey", self.change_hotkey),
+            MenuItem("Change Hotkey", self.send_change_hotkey_signal),
             MenuItem("Quit", self.quit_program),
         )
         tray_icon = Icon("Keyboard Locker", image, "Keyboard Locker", menu)
@@ -172,8 +181,11 @@ class KeyboardLock:
 
     def start(self):
         print("Program Starting")
-        self.hotkey_thread.start()
-        self.tray_icon_thread.start()
-
         while self.program_running:
-            time.sleep(1)
+            if not self.show_overlay_queue.empty():
+                self.show_overlay_queue.get(block=False)
+                self.show_overlay()
+            elif not self.show_change_hotkey_queue.empty():
+                self.show_change_hotkey_queue.get(block=False)
+                self.change_hotkey()
+            time.sleep(.5)
