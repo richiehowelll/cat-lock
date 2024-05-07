@@ -4,6 +4,7 @@ import time
 import tkinter as tk
 import webbrowser
 from queue import Queue
+import plyer
 
 import keyboard
 from PIL import Image, ImageDraw
@@ -15,6 +16,23 @@ CONFIG_FILE = "config.json"
 
 def open_about():
     webbrowser.open("https://github.com/richiehowelll/CatLock", new=2)
+
+
+def send_lock_notification():
+    plyer.notification.notify(
+        app_name="CatLock",
+        title="Keyboard Locked",
+        message="Click on screen to unlock",
+        app_icon="../resources/img/icon.ico",
+        timeout=3,
+    )
+    time.sleep(.1)
+
+
+def send_notification_in_thread():
+    notification_thread = threading.Thread(target=send_lock_notification, daemon=True)
+    notification_thread.start()
+    notification_thread.join()
 
 
 class KeyboardLock:
@@ -115,7 +133,7 @@ class KeyboardLock:
         for i in range(150):
             keyboard.block_key(i)
             self.blocked_keys.add(i)
-        print("Keyboard Locked")
+        send_notification_in_thread()
 
     def unlock_keyboard(self, event=None):
         for key in self.blocked_keys:
@@ -132,13 +150,12 @@ class KeyboardLock:
         self.root = tk.Tk()
         self.root.attributes('-fullscreen', True)
         self.root.attributes('-topmost', True)
-        self.root.attributes('-alpha', 0.5)
+        self.root.attributes('-alpha', 0.1)
         self.root.bind('<Button-1>', self.unlock_keyboard)
-        message = tk.Label(self.root, text="Keyboard Locked! Click to Unlock.", bg='black', fg='white', font=("Arial", 24))
-        message.pack(expand=True)
+        # message = tk.Label(self.root, text="", bg='black', fg='white', font=("Arial", 24))
+        # message.pack(expand=True)
 
         self.lock_keyboard()
-
         self.root.mainloop()
 
     def send_hotkey_signal(self):
@@ -183,9 +200,9 @@ class KeyboardLock:
         print("Program Starting")
         while self.program_running:
             if not self.show_overlay_queue.empty():
-                self.show_overlay_queue.get(block=False)
+                print(self.show_overlay_queue.get(block=False))
                 self.show_overlay()
             elif not self.show_change_hotkey_queue.empty():
                 self.show_change_hotkey_queue.get(block=False)
                 self.change_hotkey()
-            time.sleep(.5)
+            time.sleep(.1)
