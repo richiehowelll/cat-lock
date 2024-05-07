@@ -1,4 +1,3 @@
-import gc
 import json
 import threading
 import time
@@ -9,6 +8,9 @@ from queue import Queue
 import keyboard
 from PIL import Image, ImageDraw
 from pystray import Icon, Menu, MenuItem
+
+DEFAULT_HOTKEY = "ctrl+shift+l"
+CONFIG_FILE = "config.json"
 
 
 def open_about():
@@ -24,7 +26,7 @@ class KeyboardLock:
         self.hotkey_thread = None
         self.tray_icon_thread = threading.Thread(target=self.create_tray_icon, daemon=True)
         self.root = None
-        self.hotkey = "ctrl+shift+l"  # Default hotkey
+        self.hotkey = DEFAULT_HOTKEY
         self.load_hotkey()
         self.show_overlay_queue = Queue()
         self.show_change_hotkey_queue = Queue()
@@ -33,15 +35,14 @@ class KeyboardLock:
 
     def load_hotkey(self):
         try:
-            with open("config.json", "r") as f:
+            with open(CONFIG_FILE, "r") as f:
                 config = json.load(f)
-                if "hotkey" in config:
-                    self.hotkey = config["hotkey"]
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            pass  # Default to the built-in hotkey
+                self.hotkey = config.get("hotkey", DEFAULT_HOTKEY)
+        except (FileNotFoundError, json.JSONDecodeError):
+            pass  # Fall back to the default hotkey
 
     def save_hotkey(self):
-        with open("config.json", "w") as f:
+        with open(CONFIG_FILE, "w") as f:
             json.dump({"hotkey": self.hotkey}, f)
 
     def set_hotkey(self, new_hotkey):
@@ -51,7 +52,7 @@ class KeyboardLock:
     def change_hotkey(self):
         self.listen_for_hotkey = False
         if self.hotkey_thread.is_alive():
-            self.hotkey_thread.join()  # Wait for the hotkey listener to stop
+            self.hotkey_thread.join()
 
         with self.hotkey_lock:
             self.hotkey_thread = threading.Thread(target=self.start_hotkey_listener_thread, daemon=True)
@@ -71,13 +72,12 @@ class KeyboardLock:
             label.pack(pady=10)
 
             hotkey_entry = tk.Entry(hotkey_window, width=20)
-            # Means of communication, between the gui & update threads:
-            message_queue = Queue()
+            entry_queue = Queue()
 
-            def poll_queue():  # runs in main thread
+            def poll_queue():
                 while True:
-                    if not message_queue.empty():
-                        hotkey_entry.insert(tk.END, message_queue.get(block=False))
+                    if not entry_queue.empty():
+                        hotkey_entry.insert(tk.END, entry_queue.get(block=False))
                     break
                 hotkey_window.after(100, poll_queue)
 
@@ -100,8 +100,8 @@ class KeyboardLock:
 
         def read_user_inp():
             hotkey = keyboard.read_hotkey()
-            message_queue.put(hotkey)
-            time.sleep(1)  # Simulated delay (of 1 sec) between updates.
+            entry_queue.put(hotkey)
+            time.sleep(.5)
             print(hotkey)
 
         entry_listener_thread = threading.Thread(target=read_user_inp, daemon=True)
