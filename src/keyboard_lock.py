@@ -50,22 +50,32 @@ class KeyboardLock:
         self.show_change_hotkey_queue = Queue()
         self.start_hotkey_listener_thread()
         self.tray_icon_thread.start()
+        self.opacity = .5
 
     def load_hotkey(self):
         try:
             with open(CONFIG_FILE, "r") as f:
                 config = json.load(f)
                 self.hotkey = config.get("hotkey", DEFAULT_HOTKEY)
+                self.opacity = config.get("opacity", 0.5)
         except (FileNotFoundError, json.JSONDecodeError):
             pass  # Fall back to the default hotkey
 
-    def save_hotkey(self):
+    def save_config(self):
         with open(CONFIG_FILE, "w") as f:
-            json.dump({"hotkey": self.hotkey}, f)
+            config = {
+                "hotkey": self.hotkey,
+                "opacity": self.opacity,
+            }
+            json.dump(config, f)
+
+    def set_opacity(self, opacity):
+        self.opacity = opacity
+        self.save_config()
 
     def set_hotkey(self, new_hotkey):
         self.hotkey = new_hotkey
-        self.save_hotkey()
+        self.save_config()
 
     def change_hotkey(self):
         self.listen_for_hotkey = False
@@ -150,7 +160,7 @@ class KeyboardLock:
         self.root = tk.Tk()
         self.root.attributes('-fullscreen', True)
         self.root.attributes('-topmost', True)
-        self.root.attributes('-alpha', 0.1)
+        self.root.attributes('-alpha', self.opacity)
         self.root.bind('<Button-1>', self.unlock_keyboard)
         # message = tk.Label(self.root, text="", bg='black', fg='white', font=("Arial", 24))
         # message.pack(expand=True)
@@ -175,7 +185,7 @@ class KeyboardLock:
     def hotkey_listener(self):
         keyboard.add_hotkey(self.hotkey, self.send_hotkey_signal)
         while self.listen_for_hotkey:
-            time.sleep(1)  # Avoid excessive CPU usage
+            time.sleep(1)
         keyboard.remove_hotkey(self.hotkey)
 
     def create_tray_icon(self):
@@ -185,6 +195,14 @@ class KeyboardLock:
         menu = Menu(
             MenuItem("About", open_about),
             MenuItem("Change Hotkey", self.send_change_hotkey_signal),
+            MenuItem("Set Opacity", Menu(
+                MenuItem("5%", lambda: self.set_opacity(0.05)),
+                MenuItem("10%", lambda: self.set_opacity(0.1)),
+                MenuItem("30%", lambda: self.set_opacity(0.3)),
+                MenuItem("50%", lambda: self.set_opacity(0.5)),
+                MenuItem("70%", lambda: self.set_opacity(0.7)),
+                MenuItem("90%", lambda: self.set_opacity(0.9)),
+            )),
             MenuItem("Quit", self.quit_program),
         )
         tray_icon = Icon("Keyboard Locker", image, "Keyboard Locker", menu)
