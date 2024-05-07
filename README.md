@@ -1,6 +1,6 @@
 # CatLock
 
-CatLock is a daemon that helps you lock your keyboard with a hotkey, preventing accidental typing, especially when your cat jumps onto your keyboard.
+CatLock is a program that helps you lock your keyboard with a hotkey, preventing accidental typing, especially when your cat jumps onto your keyboard.
 
 ## Features
 - Lock the keyboard using a customizable hotkey (`Ctrl + Shift + L` by default).
