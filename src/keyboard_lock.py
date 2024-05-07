@@ -90,6 +90,7 @@ class KeyboardLock:
             self.hotkey_thread.join()
 
         with self.hotkey_lock:
+
             hotkey_window = tk.Tk()
             hotkey_window.title("Set Hotkey")
             hotkey_window.geometry("300x150")
@@ -105,13 +106,19 @@ class KeyboardLock:
             label.pack(pady=10)
 
             hotkey_entry = tk.Entry(hotkey_window, width=20)
+            hotkey_entry.config(state='readonly')
             entry_queue = Queue()
 
             def poll_queue():
                 while True:
                     if not entry_queue.empty():
                         keys_pressed = entry_queue.get(block=False)
+                        hotkey_entry.config(state='normal')
+                        hotkey_entry.delete(0, 'end')
                         hotkey_entry.insert(tk.END, keys_pressed)
+                        hotkey_entry.config(state='readonly')
+                        keyboard.stash_state()
+                        start_entry_listener_thread()
                     break
                 hotkey_window.after(100, poll_queue)
 
@@ -135,11 +142,19 @@ class KeyboardLock:
             entry_queue.put(hotkey)
             time.sleep(.5)
 
-        entry_listener_thread = threading.Thread(target=read_user_inp, daemon=True)
-        entry_listener_thread.start()
+        entry_listener_thread = None
+
+        def start_entry_listener_thread():
+            nonlocal entry_listener_thread
+            if entry_listener_thread and entry_listener_thread.is_alive():
+                entry_listener_thread.join()
+            keyboard.stash_state()
+            entry_listener_thread = threading.Thread(target=read_user_inp, daemon=True)
+            entry_listener_thread.start()
+
+        start_entry_listener_thread()
         hotkey_window.after(100, poll_queue)
         hotkey_window.mainloop()
-        entry_listener_thread.join()
 
     def lock_keyboard(self):
         self.blocked_keys.clear()
