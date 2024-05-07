@@ -10,3 +10,5 @@ CatLock is a program that helps you lock your keyboard with a hotkey, preventing
   - Customize overlay opacity
   - Enable/Disable system notifications when keyboard is locked
   - Set custom lock hotkey
+## Caveats
+- OS bound hotkeys take precedence such as `ctrl+alt+del` (this way you don't get locked out if something goes wrong)
