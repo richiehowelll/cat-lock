@@ -176,6 +176,7 @@ class KeyboardLock:
         self.show_change_hotkey_queue.put(True)
 
     def start_hotkey_listener_thread(self):
+        keyboard.stash_state()
         with self.hotkey_lock:
             self.listen_for_hotkey = True
             if self.hotkey_thread and threading.current_thread() is not self.hotkey_thread and self.hotkey_thread.is_alive():
@@ -199,7 +200,7 @@ class KeyboardLock:
             MenuItem(
                 "Enable/Disable Notifications",
                 self.toggle_notifications,
-                checked=lambda item: self.notifications_enabled,  # Display current status
+                checked=lambda item: self.notifications_enabled,
             ),
             MenuItem("Set Opacity", Menu(
                 MenuItem("5%", lambda: self.set_opacity(0.05)),
