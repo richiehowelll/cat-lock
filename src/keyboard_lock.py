@@ -28,13 +28,13 @@ class KeyboardLock:
         self.tray_icon_thread = threading.Thread(target=self.create_tray_icon, daemon=True)
         self.root = None
         self.hotkey = DEFAULT_HOTKEY
+        self.opacity = .5
+        self.notifications_enabled = True
         self.load_config()
         self.show_overlay_queue = Queue()
         self.show_change_hotkey_queue = Queue()
         self.start_hotkey_listener_thread()
         self.tray_icon_thread.start()
-        self.opacity = .5
-        self.notifications_enabled = True
 
     def load_config(self):
         try:
@@ -42,7 +42,7 @@ class KeyboardLock:
                 config = json.load(f)
                 self.hotkey = config.get("hotkey", DEFAULT_HOTKEY)
                 self.opacity = config.get("opacity", 0.5)
-                self.notifications_enabled = config.get("notificationEnabled", True)
+                self.notifications_enabled = config.get("notificationsEnabled", True)
         except (FileNotFoundError, json.JSONDecodeError):
             pass  # Fall back to the default hotkey
 
@@ -51,7 +51,7 @@ class KeyboardLock:
             config = {
                 "hotkey": self.hotkey,
                 "opacity": self.opacity,
-                "notificationEnabled": self.notifications_enabled,
+                "notificationsEnabled": self.notifications_enabled,
             }
             json.dump(config, f)
 
@@ -90,8 +90,6 @@ class KeyboardLock:
             self.hotkey_thread.join()
 
         with self.hotkey_lock:
-            self.hotkey_thread = threading.Thread(target=self.start_hotkey_listener_thread, daemon=True)
-
             hotkey_window = tk.Tk()
             hotkey_window.title("Set Hotkey")
             hotkey_window.geometry("300x150")
@@ -112,17 +110,16 @@ class KeyboardLock:
             def poll_queue():
                 while True:
                     if not entry_queue.empty():
-                        hotkey_entry.insert(tk.END, entry_queue.get(block=False))
+                        keys_pressed = entry_queue.get(block=False)
+                        hotkey_entry.insert(tk.END, keys_pressed)
                     break
                 hotkey_window.after(100, poll_queue)
 
             def set_hotkey_from_gui():
                 new_hotkey = hotkey_entry.get()
                 if new_hotkey:
-                    for key in self.hotkey.split("+"):
-                        keyboard.release(key)
-                        print(f"Key Unlocked {key}")
                     self.set_hotkey(new_hotkey)
+                    print(f"Key Unlocked {self.hotkey}")
                     print(f"Hotkey changed to: {new_hotkey}")
                     on_closing()
                 else:
@@ -137,7 +134,6 @@ class KeyboardLock:
             hotkey = keyboard.read_hotkey()
             entry_queue.put(hotkey)
             time.sleep(.5)
-            print(hotkey)
 
         entry_listener_thread = threading.Thread(target=read_user_inp, daemon=True)
         entry_listener_thread.start()
@@ -160,8 +156,8 @@ class KeyboardLock:
         # Manually release the hotkey keys to ensure they're not stuck
         keyboard.release(self.hotkey)
         print(f"Keyboard Unlocked {self.hotkey}")
-
-        self.root.destroy()
+        if self.root:
+            self.root.destroy()
 
     def show_overlay(self):
         self.root = tk.Tk()
@@ -169,8 +165,6 @@ class KeyboardLock:
         self.root.attributes('-topmost', True)
         self.root.attributes('-alpha', self.opacity)
         self.root.bind('<Button-1>', self.unlock_keyboard)
-        # message = tk.Label(self.root, text="", bg='black', fg='white', font=("Arial", 24))
-        # message.pack(expand=True)
 
         self.lock_keyboard()
         self.root.mainloop()
@@ -230,7 +224,7 @@ class KeyboardLock:
         print("Program Starting")
         while self.program_running:
             if not self.show_overlay_queue.empty():
-                print(self.show_overlay_queue.get(block=False))
+                self.show_overlay_queue.get(block=False)
                 self.show_overlay()
             elif not self.show_change_hotkey_queue.empty():
                 self.show_change_hotkey_queue.get(block=False)
