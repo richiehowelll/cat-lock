@@ -16,7 +16,7 @@ class ChangeHotkeyWindow:
             self.main.hotkey_thread.join()
 
         with self.main.hotkey_lock:
-
+            self.main.changing_hotkey_queue.put(True)
             hotkey_window = tk.Tk()
             hotkey_window.title("Set Hotkey")
             hotkey_window.geometry("300x150")
@@ -24,6 +24,7 @@ class ChangeHotkeyWindow:
 
             def on_closing():
                 hotkey_window.destroy()
+                self.main.changing_hotkey_queue.get(block=False)
                 self.main.start_hotkey_listener()
 
             hotkey_window.protocol("WM_DELETE_WINDOW", on_closing)

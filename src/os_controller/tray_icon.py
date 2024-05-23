@@ -11,7 +11,6 @@ def open_about():
 class TrayIcon:
     def __init__(self, main):
         self.main = main
-        self.create_tray_icon()
 
     def set_opacity(self, opacity):
         self.main.config.opacity = opacity
@@ -21,7 +20,7 @@ class TrayIcon:
         self.main.config.notifications_enabled = not self.main.config.notifications_enabled
         self.main.config.save()
 
-    def create_tray_icon(self):
+    def open(self):
         image = Image.open(r"../resources/img/icon.png")
         draw = ImageDraw.Draw(image)
         draw.rectangle((16, 16, 48, 48), fill="white")

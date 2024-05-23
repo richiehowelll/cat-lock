@@ -8,34 +8,53 @@ import keyboard
 
 from src.config.config import Config
 from src.keyboard_controller.hotkey_listener import HotkeyListener
-from src.os.notifications import send_notification_in_thread
-from src.os.tray_icon import TrayIcon
+from src.os_controller.notifications import send_notification_in_thread
+from src.os_controller.tray_icon import TrayIcon
 from src.ui.change_hotkey_window import ChangeHotkeyWindow
 from src.ui.overlay_window import OverlayWindow
 
 
 class CatLockCore:
     def __init__(self):
+        self.hotkey_thread = None
+        self.windows_lock_thread = None
+        self.show_change_hotkey_queue = None
+        self.show_overlay_queue = None
+        self.config = None
+        self.root = None
+        self.hotkey_lock = None
+        self.listen_for_hotkey = None
+        self.program_running = None
+        self.blocked_keys = None
+        self.changing_hotkey_queue = None
+        self.reset_main_queue = None
+        self.reset()
+        self.tray_icon_thread = threading.Thread(target=self.create_tray_icon, daemon=True)
+        self.tray_icon_thread.start()
+
+    def reset(self):
+        try:
+            sys.modules.pop('keyboard')
+        except Exception as e:
+            print(e)
+            pass
+        self.changing_hotkey_queue = Queue()
         self.blocked_keys = set()
         self.program_running = True
         self.listen_for_hotkey = True
         self.hotkey_lock = threading.Lock()
         self.hotkey_thread = None
-        self.tray_icon_thread = threading.Thread(target=self.create_tray_icon, daemon=True)
         self.root = None
         self.config = Config()
         self.show_overlay_queue = Queue()
         self.show_change_hotkey_queue = Queue()
         self.start_hotkey_listener()
-        self.tray_icon_thread.start()
-        self.reload_keyboard_queue = Queue()
         self.windows_lock_thread = threading.Thread(target=self.signal_windows_unlock, daemon=True)
+        self.reset_main_queue = Queue()
         self.windows_lock_thread.start()
-        self.reload_keyboard_thread = threading.Thread(target=self.reload_keyboard, daemon=True)
-        self.reload_keyboard_thread.start()
 
     def create_tray_icon(self):
-        TrayIcon(main=self)
+        TrayIcon(main=self).open()
 
     def start_hotkey_listener(self):
         HotkeyListener(self).start_hotkey_listener_thread()
@@ -59,11 +78,10 @@ class CatLockCore:
         if self.root:
             self.root.destroy()
         keyboard.stash_state()
-        self.reload_keyboard_queue.put(True)
+        self.reset_main_queue.put(True)
 
     def send_hotkey_signal(self):
         keyboard.stash_state()
-        self.reload_keyboard_queue.put(True)
         self.show_overlay_queue.put(True)
 
     def send_change_hotkey_signal(self):
@@ -89,31 +107,9 @@ class CatLockCore:
                 output_all = subprocess.check_output(call_all)
                 output_string_all = str(output_all)
             if was_locked:
+                self.reset_main_queue.put(True)
                 print('Unlocked')
-                self.reload_keyboard_queue.put(True)
             time.sleep(1)
-
-    def reload_keyboard(self):
-        while self.reload_keyboard_queue.empty():
-            try:
-                self.listen_for_hotkey = False
-                if self.hotkey_thread.is_alive():
-                    self.hotkey_thread.join()
-                sys.modules.pop('keyboard')
-            except Exception as e:
-                print(e)
-                pass
-
-            import keyboard
-            self.start_hotkey_listener()
-
-            # sleep for 20s unless signaled
-            for _ in range(4):
-                time.sleep(5)
-                if not self.reload_keyboard_queue.empty():
-                    while not self.reload_keyboard_queue.empty():
-                        self.reload_keyboard_queue.get(block=False)
-                    break
 
     def start(self):
         print("Program Starting")
@@ -126,6 +122,8 @@ class CatLockCore:
                 self.show_change_hotkey_queue.get(block=False)
                 change_hotkey_window = ChangeHotkeyWindow(main=self)
                 change_hotkey_window.open()
+            if not self.reset_main_queue.empty():
+                self.reset()
             time.sleep(.1)
 
 
