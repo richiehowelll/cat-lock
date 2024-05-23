@@ -2,6 +2,8 @@
 
 CatLock is a program that helps you lock your keyboard with a hotkey, preventing accidental typing, especially when your cat jumps onto your keyboard.
 
+Currently only supported on **Windows**
+
 ## Features
 - Lock the keyboard using a customizable hotkey (`Ctrl + Shift + L` by default).
 - Display an overlay indicating the keyboard is locked.
