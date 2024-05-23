@@ -41,8 +41,17 @@ class ChangeHotkeyWindow:
                     if not entry_queue.empty():
                         keys_pressed = entry_queue.get(block=False)
                         hotkey_entry.config(state='normal')
-                        hotkey_entry.delete(0, 'end')
-                        hotkey_entry.insert(tk.END, keys_pressed)
+                        if keys_pressed == 'backspace':
+                            entry = hotkey_entry.get()
+                            if '+' in entry:
+                                new_text = entry[:entry.rfind('+')]
+                            else:
+                                new_text = ''
+                            hotkey_entry.delete(0, 'end')
+                            hotkey_entry.insert(tk.END, new_text)
+                        else:
+                            hotkey_entry.delete(0, 'end')
+                            hotkey_entry.insert(tk.END, keys_pressed)
                         hotkey_entry.config(state='readonly')
                         keyboard.stash_state()
                         start_entry_listener_thread()
