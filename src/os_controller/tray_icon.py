@@ -42,5 +42,5 @@ class TrayIcon:
             )),
             MenuItem("Quit", self.main.quit_program),
         )
-        tray_icon = Icon("Keyboard Locker", image, "Keyboard Locker", menu)
+        tray_icon = Icon("CatLock", image, "CatLock", menu)
         tray_icon.run()
