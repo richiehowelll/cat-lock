@@ -53,8 +53,6 @@ class ChangeHotkeyWindow:
                 new_hotkey = hotkey_entry.get()
                 if new_hotkey:
                     self.main.set_hotkey(new_hotkey)
-                    print(f"Key Unlocked {self.main.config.hotkey}")
-                    print(f"Hotkey changed to: {new_hotkey}")
                     on_closing()
                 else:
                     label.config(text="Invalid hotkey, try again.")

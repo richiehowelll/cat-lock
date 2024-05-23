@@ -36,7 +36,6 @@ class CatLockCore:
         try:
             sys.modules.pop('keyboard')
         except Exception as e:
-            print(e)
             pass
         self.changing_hotkey_queue = Queue()
         self.blocked_keys = set()
@@ -74,7 +73,6 @@ class CatLockCore:
         for key in self.blocked_keys:
             keyboard.unblock_key(key)
         self.blocked_keys.clear()
-        print(f"Keyboard Unlocked {self.config.hotkey}")
         if self.root:
             self.root.destroy()
         keyboard.stash_state()
@@ -91,7 +89,6 @@ class CatLockCore:
         self.program_running = False
         self.unlock_keyboard()
         icon.stop()
-        print("Program Exiting")
 
     def signal_windows_unlock(self):
         while self.program_running:
@@ -101,18 +98,15 @@ class CatLockCore:
             output_string_all = str(output_all)
             was_locked = False
             while process_name in output_string_all:
-                print("Locked")
                 was_locked = True
                 time.sleep(1)
                 output_all = subprocess.check_output(call_all)
                 output_string_all = str(output_all)
             if was_locked:
                 self.reset_main_queue.put(True)
-                print('Unlocked')
             time.sleep(1)
 
     def start(self):
-        print("Program Starting")
         while self.program_running:
             if not self.show_overlay_queue.empty():
                 self.show_overlay_queue.get(block=False)
