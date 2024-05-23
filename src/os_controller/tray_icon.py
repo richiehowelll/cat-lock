@@ -1,7 +1,10 @@
+import os
 import webbrowser
 
 from pystray import Icon, Menu, MenuItem
 from PIL import Image, ImageDraw
+
+from src.util.path_util import get_packaged_path
 
 
 def open_about():
@@ -21,7 +24,8 @@ class TrayIcon:
         self.main.config.save()
 
     def open(self):
-        image = Image.open(r"../resources/img/icon.png")
+        path = os.path.join("resources", "img", "icon.png")
+        image = Image.open(get_packaged_path(path))
         draw = ImageDraw.Draw(image)
         draw.rectangle((16, 16, 48, 48), fill="white")
         menu = Menu(

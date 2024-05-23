@@ -1,15 +1,19 @@
+import os
 import threading
 import time
 
 import plyer
 
+from src.util.path_util import get_packaged_path
+
 
 def send_lock_notification():
+    path = os.path.join("resources", "img", "icon.ico")
     plyer.notification.notify(
         app_name="CatLock",
         title="Keyboard Locked",
         message="Click on screen to unlock",
-        app_icon="../resources/img/icon.ico",
+        app_icon=get_packaged_path(path),
         timeout=3,
     )
     time.sleep(.1)
