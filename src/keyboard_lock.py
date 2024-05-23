@@ -9,6 +9,7 @@ from src.config import Config
 from src.hotkey_listener import HotkeyListener
 from src.notifications import send_notification_in_thread
 from src.tray_icon import TrayIcon
+from src.ui.overlay import Overlay
 
 
 class KeyboardLock:
@@ -126,16 +127,6 @@ class KeyboardLock:
         if self.root:
             self.root.destroy()
 
-    def show_overlay(self):
-        self.root = tk.Tk()
-        self.root.attributes('-fullscreen', True)
-        self.root.attributes('-topmost', True)
-        self.root.attributes('-alpha', self.config.opacity)
-        self.root.bind('<Button-1>', self.unlock_keyboard)
-
-        self.lock_keyboard()
-        self.root.mainloop()
-
     def send_hotkey_signal(self):
         self.show_overlay_queue.put(True)
 
@@ -153,7 +144,8 @@ class KeyboardLock:
         while self.program_running:
             if not self.show_overlay_queue.empty():
                 self.show_overlay_queue.get(block=False)
-                self.show_overlay()
+                overlay = Overlay(self)
+                overlay.show()
             elif not self.show_change_hotkey_queue.empty():
                 self.show_change_hotkey_queue.get(block=False)
                 self.change_hotkey()
