@@ -1,3 +1,5 @@
+import subprocess
+import sys
 import threading
 import time
 from queue import Queue
@@ -26,6 +28,11 @@ class CatLockCore:
         self.show_change_hotkey_queue = Queue()
         self.start_hotkey_listener()
         self.tray_icon_thread.start()
+        self.reload_keyboard_queue = Queue()
+        self.windows_lock_thread = threading.Thread(target=self.signal_windows_unlock, daemon=True)
+        self.windows_lock_thread.start()
+        self.reload_keyboard_thread = threading.Thread(target=self.reload_keyboard, daemon=True)
+        self.reload_keyboard_thread.start()
 
     def create_tray_icon(self):
         TrayIcon(main=self)
@@ -48,15 +55,15 @@ class CatLockCore:
         for key in self.blocked_keys:
             keyboard.unblock_key(key)
         self.blocked_keys.clear()
-
-        # Manually release the hotkey keys to ensure they're not stuck
-        keyboard.stash_state()
         print(f"Keyboard Unlocked {self.config.hotkey}")
         if self.root:
             self.root.destroy()
+        keyboard.stash_state()
+        self.reload_keyboard_queue.put(True)
 
     def send_hotkey_signal(self):
         keyboard.stash_state()
+        self.reload_keyboard_queue.put(True)
         self.show_overlay_queue.put(True)
 
     def send_change_hotkey_signal(self):
@@ -67,6 +74,46 @@ class CatLockCore:
         self.unlock_keyboard()
         icon.stop()
         print("Program Exiting")
+
+    def signal_windows_unlock(self):
+        while self.program_running:
+            process_name = 'LogonUI.exe'
+            call_all = 'TASKLIST'
+            output_all = subprocess.check_output(call_all)
+            output_string_all = str(output_all)
+            was_locked = False
+            while process_name in output_string_all:
+                print("Locked")
+                was_locked = True
+                time.sleep(1)
+                output_all = subprocess.check_output(call_all)
+                output_string_all = str(output_all)
+            if was_locked:
+                print('Unlocked')
+                self.reload_keyboard_queue.put(True)
+            time.sleep(1)
+
+    def reload_keyboard(self):
+        while self.reload_keyboard_queue.empty():
+            try:
+                self.listen_for_hotkey = False
+                if self.hotkey_thread.is_alive():
+                    self.hotkey_thread.join()
+                sys.modules.pop('keyboard')
+            except Exception as e:
+                print(e)
+                pass
+
+            import keyboard
+            self.start_hotkey_listener()
+
+            # sleep for 20s unless signaled
+            for _ in range(4):
+                time.sleep(5)
+                if not self.reload_keyboard_queue.empty():
+                    while not self.reload_keyboard_queue.empty():
+                        self.reload_keyboard_queue.get(block=False)
+                    break
 
     def start(self):
         print("Program Starting")
