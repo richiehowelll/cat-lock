@@ -5,11 +5,11 @@ import webbrowser
 from queue import Queue
 
 import keyboard
-import plyer
 from PIL import Image, ImageDraw
 from pystray import Icon, Menu, MenuItem
 
 from src.config import Config
+from src.notifications import send_notification_in_thread
 
 
 def open_about():
@@ -30,23 +30,6 @@ class KeyboardLock:
         self.show_change_hotkey_queue = Queue()
         self.start_hotkey_listener_thread()
         self.tray_icon_thread.start()
-
-    def send_lock_notification(self):
-        if self.config.notifications_enabled:
-            plyer.notification.notify(
-                app_name="CatLock",
-                title="Keyboard Locked",
-                message="Click on screen to unlock",
-                app_icon="../resources/img/icon.ico",
-                timeout=3,
-            )
-            time.sleep(.1)
-
-    def send_notification_in_thread(self):
-        if self.config.notifications_enabled:
-            notification_thread = threading.Thread(target=self.send_lock_notification, daemon=True)
-            notification_thread.start()
-            notification_thread.join()
 
     def set_opacity(self, opacity):
         self.config.opacity = opacity
@@ -137,7 +120,7 @@ class KeyboardLock:
         for i in range(150):
             keyboard.block_key(i)
             self.blocked_keys.add(i)
-        self.send_notification_in_thread()
+        send_notification_in_thread(self.config.notifications_enabled)
 
     def unlock_keyboard(self, event=None):
         for key in self.blocked_keys:
