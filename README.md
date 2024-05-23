@@ -7,7 +7,7 @@ Currently only supported on **Windows**
 ## Features
 - Lock the keyboard using a customizable hotkey (`Ctrl + L` by default).
 - Displays an overlay indicating the keyboard is locked.
-  - The overlay is semi-transparent, allowing you to continue watching videos or viewing other content even when the keyboard is locked.
+  - Overlay is semi-transparent, allowing you to continue watching videos or viewing content even when the keyboard is locked.
 - Click the overlay to unlock the keyboard.
 - System tray menu with configuration options:
   - Customize overlay opacity
