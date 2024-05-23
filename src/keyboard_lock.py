@@ -1,19 +1,13 @@
 import threading
 import time
 import tkinter as tk
-import webbrowser
 from queue import Queue
 
 import keyboard
-from PIL import Image, ImageDraw
-from pystray import Icon, Menu, MenuItem
 
 from src.config import Config
 from src.notifications import send_notification_in_thread
-
-
-def open_about():
-    webbrowser.open("https://github.com/richiehowelll/CatLock", new=2)
+from src.tray_icon import TrayIcon
 
 
 class KeyboardLock:
@@ -31,16 +25,11 @@ class KeyboardLock:
         self.start_hotkey_listener_thread()
         self.tray_icon_thread.start()
 
-    def set_opacity(self, opacity):
-        self.config.opacity = opacity
-        self.config.save()
+    def create_tray_icon(self):
+        TrayIcon(kl=self)
 
     def set_hotkey(self, new_hotkey):
         self.config.hotkey = new_hotkey
-        self.config.save()
-
-    def toggle_notifications(self):
-        self.config.notifications_enabled = not self.config.notifications_enabled
         self.config.save()
 
     def change_hotkey(self):
@@ -163,31 +152,6 @@ class KeyboardLock:
         while self.listen_for_hotkey:
             time.sleep(1)
         keyboard.remove_hotkey(self.config.hotkey)
-
-    def create_tray_icon(self):
-        image = Image.open("../resources/img/icon.png")
-        draw = ImageDraw.Draw(image)
-        draw.rectangle((16, 16, 48, 48), fill="white")
-        menu = Menu(
-            MenuItem("About", open_about),
-            MenuItem("Change Hotkey", self.send_change_hotkey_signal),
-            MenuItem(
-                "Enable/Disable Notifications",
-                self.toggle_notifications,
-                checked=lambda item: self.config.notifications_enabled,
-            ),
-            MenuItem("Set Opacity", Menu(
-                MenuItem("5%", lambda: self.set_opacity(0.05)),
-                MenuItem("10%", lambda: self.set_opacity(0.1)),
-                MenuItem("30%", lambda: self.set_opacity(0.3)),
-                MenuItem("50%", lambda: self.set_opacity(0.5)),
-                MenuItem("70%", lambda: self.set_opacity(0.7)),
-                MenuItem("90%", lambda: self.set_opacity(0.9)),
-            )),
-            MenuItem("Quit", self.quit_program),
-        )
-        tray_icon = Icon("Keyboard Locker", image, "Keyboard Locker", menu)
-        tray_icon.run()
 
     def quit_program(self, icon, item):
         self.program_running = False
