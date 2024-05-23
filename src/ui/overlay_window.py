@@ -1,11 +1,11 @@
 import tkinter as tk
 
 
-class Overlay:
+class OverlayWindow:
     def __init__(self, main):
         self.main = main
 
-    def show(self):
+    def open(self):
         self.main.root = tk.Tk()
         self.main.root.attributes('-fullscreen', True)
         self.main.root.attributes('-topmost', True)
