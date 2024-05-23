@@ -5,7 +5,7 @@ from queue import Queue
 import keyboard
 
 from src.config.config import Config
-from src.keyboard.hotkey_listener import HotkeyListener
+from src.keyboard_controller.hotkey_listener import HotkeyListener
 from src.os.notifications import send_notification_in_thread
 from src.os.tray_icon import TrayIcon
 from src.ui.change_hotkey_window import ChangeHotkeyWindow
@@ -50,12 +50,13 @@ class CatLockCore:
         self.blocked_keys.clear()
 
         # Manually release the hotkey keys to ensure they're not stuck
-        keyboard.release(self.config.hotkey)
+        keyboard.stash_state()
         print(f"Keyboard Unlocked {self.config.hotkey}")
         if self.root:
             self.root.destroy()
 
     def send_hotkey_signal(self):
+        keyboard.stash_state()
         self.show_overlay_queue.put(True)
 
     def send_change_hotkey_signal(self):
