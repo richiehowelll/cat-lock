@@ -33,6 +33,7 @@ class CatLockCore:
         self.tray_icon_thread.start()
 
     def reset(self):
+        # hack to deal with stuck hotkeys and keyboard library malfunctioning after windows lock screen
         try:
             sys.modules.pop('keyboard')
         except Exception as e:
