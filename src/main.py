@@ -95,7 +95,8 @@ class CatLockCore:
         while self.program_running:
             process_name = 'LogonUI.exe'
             call_all = 'TASKLIST'
-            output_all = subprocess.check_output(call_all)
+            no_console_flag = 0x08000000
+            output_all = subprocess.check_output(call_all, creationflags=no_console_flag)
             output_string_all = str(output_all)
             was_locked = False
             while process_name in output_string_all:
