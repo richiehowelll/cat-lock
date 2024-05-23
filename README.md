@@ -5,8 +5,8 @@ CatLock is a program that helps you lock your keyboard with a hotkey, preventing
 Currently only supported on **Windows**
 
 ## Features
-- Lock the keyboard using a customizable hotkey (`Ctrl + Shift + L` by default).
-- Display an overlay indicating the keyboard is locked.
+- Lock the keyboard using a customizable hotkey (`Ctrl + L` by default).
+- Displays an overlay indicating the keyboard is locked.
 - Click the overlay to unlock the keyboard.
 - System tray menu with config options:
   - Customize overlay opacity
