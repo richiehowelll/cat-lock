@@ -1,6 +1,7 @@
 import json
+import os
 
-CONFIG_FILE = "../config.json"
+CONFIG_FILE = r"../src/config/config.json"
 DEFAULT_HOTKEY = "ctrl+shift+l"
 
 

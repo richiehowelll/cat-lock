@@ -22,7 +22,7 @@ class TrayIcon:
         self.main.config.save()
 
     def create_tray_icon(self):
-        image = Image.open("../../resources/img/icon.png")
+        image = Image.open(r"../resources/img/icon.png")
         draw = ImageDraw.Draw(image)
         draw.rectangle((16, 16, 48, 48), fill="white")
         menu = Menu(
