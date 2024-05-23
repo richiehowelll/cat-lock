@@ -6,6 +6,7 @@ from queue import Queue
 import keyboard
 
 from src.config import Config
+from src.hotkey_listener import HotkeyListener
 from src.notifications import send_notification_in_thread
 from src.tray_icon import TrayIcon
 
@@ -22,11 +23,14 @@ class KeyboardLock:
         self.config = Config()
         self.show_overlay_queue = Queue()
         self.show_change_hotkey_queue = Queue()
-        self.start_hotkey_listener_thread()
+        self.start_hotkey_listener()
         self.tray_icon_thread.start()
 
     def create_tray_icon(self):
         TrayIcon(kl=self)
+
+    def start_hotkey_listener(self):
+        HotkeyListener(self).start_hotkey_listener_thread()
 
     def set_hotkey(self, new_hotkey):
         self.config.hotkey = new_hotkey
@@ -46,7 +50,7 @@ class KeyboardLock:
 
             def on_closing():
                 hotkey_window.destroy()
-                self.start_hotkey_listener_thread()
+                self.start_hotkey_listener()
 
             hotkey_window.protocol("WM_DELETE_WINDOW", on_closing)
 
@@ -137,21 +141,6 @@ class KeyboardLock:
 
     def send_change_hotkey_signal(self):
         self.show_change_hotkey_queue.put(True)
-
-    def start_hotkey_listener_thread(self):
-        keyboard.stash_state()
-        with self.hotkey_lock:
-            self.listen_for_hotkey = True
-            if self.hotkey_thread and threading.current_thread() is not self.hotkey_thread and self.hotkey_thread.is_alive():
-                self.hotkey_thread.join()
-            self.hotkey_thread = threading.Thread(target=self.hotkey_listener, daemon=True)
-            self.hotkey_thread.start()
-
-    def hotkey_listener(self):
-        keyboard.add_hotkey(self.config.hotkey, self.send_hotkey_signal)
-        while self.listen_for_hotkey:
-            time.sleep(1)
-        keyboard.remove_hotkey(self.config.hotkey)
 
     def quit_program(self, icon, item):
         self.program_running = False
