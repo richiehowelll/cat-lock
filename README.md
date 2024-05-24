@@ -24,3 +24,8 @@ pyinstaller --onefile --add-data="./resources/img/icon.ico:./resources/img/" --a
 ## Caveats
 - Relies on https://github.com/boppreh/keyboard/ which only has full support for Windows
 - OS bound hotkeys take precedence such as `ctrl+alt+del` (this way you don't get locked out if something goes wrong)
+
+
+Tested by:
+
+<img src="https://i.imgur.com/AuEkoPy.jpeg" width="50%" height="50%"/>
