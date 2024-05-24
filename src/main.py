@@ -16,7 +16,7 @@ from src.ui.overlay_window import OverlayWindow
 
 
 class CatLockCore:
-    def __init__(self):
+    def __init__(self) -> None:
         self.hotkey_thread = None
         self.windows_lock_thread = None
         self.show_change_hotkey_queue = None
@@ -33,7 +33,7 @@ class CatLockCore:
         self.tray_icon_thread = threading.Thread(target=self.create_tray_icon, daemon=True)
         self.tray_icon_thread.start()
 
-    def reset(self):
+    def reset(self) -> None:
         # hack to deal with stuck hotkeys and keyboard library malfunctioning after windows lock screen
         try:
             sys.modules.pop('keyboard')
@@ -54,24 +54,24 @@ class CatLockCore:
         self.reset_main_queue = Queue()
         self.windows_lock_thread.start()
 
-    def create_tray_icon(self):
+    def create_tray_icon(self) -> None:
         TrayIcon(main=self).open()
 
-    def start_hotkey_listener(self):
+    def start_hotkey_listener(self) -> None:
         HotkeyListener(self).start_hotkey_listener_thread()
 
-    def set_hotkey(self, new_hotkey):
+    def set_hotkey(self, new_hotkey: str) -> None:
         self.config.hotkey = new_hotkey
         self.config.save()
 
-    def lock_keyboard(self):
+    def lock_keyboard(self) -> None:
         self.blocked_keys.clear()
         for i in range(150):
             keyboard.block_key(i)
             self.blocked_keys.add(i)
         send_notification_in_thread(self.config.notifications_enabled)
 
-    def unlock_keyboard(self, event=None):
+    def unlock_keyboard(self, event=None) -> None:
         for key in self.blocked_keys:
             keyboard.unblock_key(key)
         self.blocked_keys.clear()
@@ -80,19 +80,19 @@ class CatLockCore:
         keyboard.stash_state()
         self.reset_main_queue.put(True)
 
-    def send_hotkey_signal(self):
+    def send_hotkey_signal(self) -> None:
         keyboard.stash_state()
         self.show_overlay_queue.put(True)
 
-    def send_change_hotkey_signal(self):
+    def send_change_hotkey_signal(self) -> None:
         self.show_change_hotkey_queue.put(True)
 
-    def quit_program(self, icon, item):
+    def quit_program(self, icon, item) -> None:
         self.program_running = False
         self.unlock_keyboard()
         icon.stop()
 
-    def signal_windows_unlock(self):
+    def signal_windows_unlock(self) -> None:
         while self.program_running:
             process_name = 'LogonUI.exe'
             call_all = 'TASKLIST'
@@ -109,7 +109,7 @@ class CatLockCore:
                 self.reset_main_queue.put(True)
             time.sleep(1)
 
-    def start(self):
+    def start(self) -> None:
         while self.program_running:
             if not self.show_overlay_queue.empty():
                 self.show_overlay_queue.get(block=False)

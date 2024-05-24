@@ -7,7 +7,7 @@ import plyer
 from src.util.path_util import get_packaged_path
 
 
-def send_lock_notification():
+def send_lock_notification() -> None:
     path = os.path.join("resources", "img", "icon.ico")
     plyer.notification.notify(
         app_name="CatLock",
@@ -19,7 +19,7 @@ def send_lock_notification():
     time.sleep(.1)
 
 
-def send_notification_in_thread(notifications_enabled: bool):
+def send_notification_in_thread(notifications_enabled: bool) -> None:
     if notifications_enabled:
         notification_thread = threading.Thread(target=send_lock_notification, daemon=True)
         notification_thread.start()

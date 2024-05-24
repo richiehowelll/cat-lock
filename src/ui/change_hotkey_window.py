@@ -10,7 +10,7 @@ class ChangeHotkeyWindow:
     def __init__(self, main):
         self.main = main
 
-    def open(self):
+    def open(self) -> None:
         self.main.listen_for_hotkey = False
         if self.main.hotkey_thread.is_alive():
             self.main.hotkey_thread.join()
@@ -56,7 +56,7 @@ class ChangeHotkeyWindow:
                     start_entry_listener_thread()
                 hotkey_window.after(100, poll_queue)
 
-            def set_hotkey_from_gui():
+            def set_hotkey_from_gui() -> None:
                 new_hotkey = hotkey_entry.get()
                 if new_hotkey:
                     self.main.set_hotkey(new_hotkey)
@@ -69,14 +69,14 @@ class ChangeHotkeyWindow:
             hotkey_entry.focus_force()
             set_hotkey_button.pack(pady=10)
 
-        def read_user_inp():
+        def read_user_inp() -> None:
             hotkey = keyboard.read_hotkey()
             entry_queue.put(hotkey)
             time.sleep(.5)
 
         entry_listener_thread = None
 
-        def start_entry_listener_thread():
+        def start_entry_listener_thread() -> None:
             nonlocal entry_listener_thread
             if entry_listener_thread and entry_listener_thread.is_alive():
                 entry_listener_thread.join()

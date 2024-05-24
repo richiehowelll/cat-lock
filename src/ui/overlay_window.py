@@ -5,7 +5,7 @@ class OverlayWindow:
     def __init__(self, main):
         self.main = main
 
-    def open(self):
+    def open(self) -> None:
         self.main.root = tk.Tk()
         self.main.root.attributes('-fullscreen', True)
         self.main.root.attributes('-topmost', True)

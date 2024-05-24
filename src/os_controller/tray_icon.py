@@ -15,15 +15,15 @@ class TrayIcon:
     def __init__(self, main):
         self.main = main
 
-    def set_opacity(self, opacity):
+    def set_opacity(self, opacity: int) -> None:
         self.main.config.opacity = opacity
         self.main.config.save()
 
-    def toggle_notifications(self):
+    def toggle_notifications(self) -> None:
         self.main.config.notifications_enabled = not self.main.config.notifications_enabled
         self.main.config.save()
 
-    def open(self):
+    def open(self) -> None:
         path = os.path.join("resources", "img", "icon.png")
         image = Image.open(get_packaged_path(path))
         draw = ImageDraw.Draw(image)
