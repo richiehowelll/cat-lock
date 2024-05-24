@@ -16,19 +16,15 @@ def load():
 
 
 class Config:
-    def __init__(self):
+    def __init__(self) -> None:
         config = load()
-        if config:
-            self.hotkey = config.get("hotkey", DEFAULT_HOTKEY)
-            self.opacity = config.get("opacity", 0.3)
-            self.notifications_enabled = config.get("notificationsEnabled", True)
-        else:
-            self.hotkey = DEFAULT_HOTKEY
-            self.opacity = 0.3
-            self.notifications_enabled = True
+        self.hotkey = config.get("hotkey", DEFAULT_HOTKEY) if config else DEFAULT_HOTKEY
+        self.opacity = config.get("opacity", 0.3) if config else 0.3
+        self.notifications_enabled = config.get("notificationsEnabled", True) if config else True
+        if not config:
             self.save()
 
-    def save(self):
+    def save(self) -> None:
         with open(get_packaged_path(CONFIG_FILE), "w") as f:
             config = {
                 "hotkey": self.hotkey,
