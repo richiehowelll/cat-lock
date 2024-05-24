@@ -36,26 +36,24 @@ class ChangeHotkeyWindow:
             hotkey_entry.config(state='readonly')
             entry_queue = Queue()
 
-            def poll_queue():
-                while True:
-                    if not entry_queue.empty():
-                        keys_pressed = entry_queue.get(block=False)
-                        hotkey_entry.config(state='normal')
-                        if keys_pressed == 'backspace':
-                            entry = hotkey_entry.get()
-                            if '+' in entry:
-                                new_text = entry[:entry.rfind('+')]
-                            else:
-                                new_text = ''
-                            hotkey_entry.delete(0, 'end')
-                            hotkey_entry.insert(tk.END, new_text)
-                        else:
-                            hotkey_entry.delete(0, 'end')
-                            hotkey_entry.insert(tk.END, keys_pressed)
-                        hotkey_entry.config(state='readonly')
-                        keyboard.stash_state()
-                        start_entry_listener_thread()
-                    break
+            def process_keys(keys_pressed: str) -> None:
+                hotkey_entry.config(state='normal')
+                if keys_pressed == 'backspace':
+                    entry = hotkey_entry.get()
+                    new_text = entry[:entry.rfind('+')] if '+' in entry else ''
+                    hotkey_entry.delete(0, 'end')
+                    hotkey_entry.insert(tk.END, new_text)
+                else:
+                    hotkey_entry.delete(0, 'end')
+                    hotkey_entry.insert(tk.END, keys_pressed)
+                hotkey_entry.config(state='readonly')
+
+            def poll_queue() -> None:
+                if not entry_queue.empty():
+                    keys_pressed = entry_queue.get(block=False)
+                    process_keys(keys_pressed)
+                    keyboard.stash_state()
+                    start_entry_listener_thread()
                 hotkey_window.after(100, poll_queue)
 
             def set_hotkey_from_gui():
