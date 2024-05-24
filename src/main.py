@@ -103,7 +103,7 @@ class CatLockCore:
             while process_name in output_string_all:
                 was_locked = True
                 time.sleep(1)
-                output_all = subprocess.check_output(call_all)
+                output_all = subprocess.check_output(call_all, creationflags=no_console_flag)
                 output_string_all = str(output_all)
             if was_locked:
                 self.reset_main_queue.put(True)
