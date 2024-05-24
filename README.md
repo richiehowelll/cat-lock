@@ -26,6 +26,6 @@ pyinstaller --onefile --add-data="./resources/img/icon.ico:./resources/img/" --a
 - OS bound hotkeys take precedence such as `ctrl+alt+del` (this way you don't get locked out if something goes wrong)
 
 
-Tested by:
+## Tested by:
 
 <img src="https://i.imgur.com/AuEkoPy.jpeg" width="50%" height="50%"/>
