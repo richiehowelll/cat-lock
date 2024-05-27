@@ -39,6 +39,7 @@ class CatLockCore:
             sys.modules.pop('keyboard')
         except Exception as e:
             pass
+        import keyboard
         self.changing_hotkey_queue = Queue()
         self.blocked_keys = set()
         self.program_running = True
