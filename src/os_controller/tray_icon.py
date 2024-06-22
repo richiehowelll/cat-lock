@@ -33,7 +33,7 @@ class TrayIcon:
         menu = Menu(
             MenuItem("About", open_about),
             MenuItem("Change Hotkey", self.main.send_change_hotkey_signal),
-            MenuItem("Donate ☕", open_buy_me_a_coffee),
+            MenuItem("Support ☕", open_buy_me_a_coffee),
             MenuItem(
                 "Enable/Disable Notifications",
                 self.toggle_notifications,
