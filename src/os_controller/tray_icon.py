@@ -33,7 +33,6 @@ class TrayIcon:
         menu = Menu(
             MenuItem("About", open_about),
             MenuItem("Change Hotkey", self.main.send_change_hotkey_signal),
-            MenuItem("Support ☕", open_buy_me_a_coffee),
             MenuItem(
                 "Enable/Disable Notifications",
                 self.toggle_notifications,
@@ -47,6 +46,7 @@ class TrayIcon:
                 MenuItem("70%", lambda: self.set_opacity(0.7)),
                 MenuItem("90%", lambda: self.set_opacity(0.9)),
             )),
+            MenuItem("Support ☕", open_buy_me_a_coffee),
             MenuItem("Quit", self.main.quit_program),
         )
         tray_icon = Icon("CatLock", image, "CatLock", menu)
