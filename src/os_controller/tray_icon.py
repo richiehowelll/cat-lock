@@ -10,6 +10,8 @@ from src.util.path_util import get_packaged_path
 def open_about():
     webbrowser.open("https://github.com/richiehowelll/CatLock", new=2)
 
+def open_buy_me_a_coffee():
+    webbrowser.open("https://buymeacoffee.com/richiehowelll", new=2)
 
 class TrayIcon:
     def __init__(self, main):
@@ -31,6 +33,7 @@ class TrayIcon:
         menu = Menu(
             MenuItem("About", open_about),
             MenuItem("Change Hotkey", self.main.send_change_hotkey_signal),
+            MenuItem("Donate ☕", open_buy_me_a_coffee),
             MenuItem(
                 "Enable/Disable Notifications",
                 self.toggle_notifications,
