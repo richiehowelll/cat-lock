@@ -11,7 +11,6 @@ from src.config.config import Config
 from src.keyboard_controller.hotkey_listener import HotkeyListener
 from src.os_controller.notifications import send_notification_in_thread
 from src.os_controller.tray_icon import TrayIcon
-from src.ui.change_hotkey_window import ChangeHotkeyWindow
 from src.ui.overlay_window import OverlayWindow
 
 
@@ -19,7 +18,6 @@ class CatLockCore:
     def __init__(self) -> None:
         self.hotkey_thread = None
         self.windows_lock_thread = None
-        self.show_change_hotkey_queue = None
         self.show_overlay_queue = None
         self.config = None
         self.root = None
@@ -49,7 +47,6 @@ class CatLockCore:
         self.root = None
         self.config = Config()
         self.show_overlay_queue = Queue()
-        self.show_change_hotkey_queue = Queue()
         self.start_hotkey_listener()
         self.windows_lock_thread = threading.Thread(target=self.signal_windows_unlock, daemon=True)
         self.reset_main_queue = Queue()
@@ -85,9 +82,6 @@ class CatLockCore:
         keyboard.stash_state()
         self.show_overlay_queue.put(True)
 
-    def send_change_hotkey_signal(self) -> None:
-        self.show_change_hotkey_queue.put(True)
-
     def quit_program(self, icon, item) -> None:
         self.program_running = False
         self.unlock_keyboard()
@@ -116,10 +110,6 @@ class CatLockCore:
                 self.show_overlay_queue.get(block=False)
                 overlay = OverlayWindow(main=self)
                 overlay.open()
-            elif not self.show_change_hotkey_queue.empty():
-                self.show_change_hotkey_queue.get(block=False)
-                change_hotkey_window = ChangeHotkeyWindow(main=self)
-                change_hotkey_window.open()
             if not self.reset_main_queue.empty():
                 self.reset()
             time.sleep(.1)

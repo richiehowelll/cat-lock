@@ -32,7 +32,6 @@ class TrayIcon:
         draw.rectangle((16, 16, 48, 48), fill="white")
         menu = Menu(
             MenuItem("About", open_about),
-            MenuItem("Change Hotkey", self.main.send_change_hotkey_signal),
             MenuItem(
                 "Enable/Disable Notifications",
                 self.toggle_notifications,
