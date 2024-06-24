@@ -4,13 +4,12 @@ CatLock is a simple utility designed to prevent accidental keyboard input, parti
 Currently only supported on **Windows**
 
 ## Features
-- Lock your keyboard with a customizable hotkey (Ctrl + L by default).
+- Lock your keyboard with a hotkey (Ctrl + L).
 - See a semi-transparent overlay indicating the keyboard is locked, allowing uninterrupted viewing.
 - Unlock the keyboard by clicking on the overlay.
 - Access configuration options via a convenient system tray menu:
     - Adjust overlay opacity to suit your preferences.
     - Enable or disable system notifications when the keyboard is locked.
-    - Set a personalized hotkey combination for locking.
 ## Build an executable
 ```bash
 pip install pyinstaller
