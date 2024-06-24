@@ -58,10 +58,6 @@ class CatLockCore:
     def start_hotkey_listener(self) -> None:
         HotkeyListener(self).start_hotkey_listener_thread()
 
-    def set_hotkey(self, new_hotkey: str) -> None:
-        self.config.hotkey = new_hotkey
-        self.config.save()
-
     def lock_keyboard(self) -> None:
         self.blocked_keys.clear()
         for i in range(150):

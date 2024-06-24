@@ -1,17 +1,11 @@
 import os
-import webbrowser
 
-from pystray import Icon, Menu, MenuItem
 from PIL import Image, ImageDraw
+from pystray import Icon, Menu, MenuItem
 
 from src.util.path_util import get_packaged_path
+from src.util.web_browser_util import open_about, open_buy_me_a_coffee
 
-
-def open_about():
-    webbrowser.open("https://catlock.app/about/", new=2)
-
-def open_buy_me_a_coffee():
-    webbrowser.open("https://buymeacoffee.com/richiehowelll", new=2)
 
 class TrayIcon:
     def __init__(self, main):
