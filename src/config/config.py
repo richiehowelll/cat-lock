@@ -1,7 +1,8 @@
 import json
 import os.path
+import shutil
 
-from src.util.path_util import get_packaged_path
+from src.util.path_util import get_packaged_path, get_config_path
 from src.util.web_browser_util import open_about
 
 CONFIG_FILE = os.path.join("resources", "config", "config.json")
@@ -10,10 +11,12 @@ DEFAULT_HOTKEY = "ctrl+l"
 
 def load():
     try:
-        with open(get_packaged_path(CONFIG_FILE), "r") as f:
+        with open(get_config_path(), "r") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        pass  # Fall back to the default hotkey
+        shutil.copy(get_packaged_path(CONFIG_FILE), get_config_path())
+        with open(get_config_path(), "r") as f:
+            return json.load(f)
 
 
 class Config:
@@ -32,7 +35,8 @@ class Config:
             self.save()
 
     def save(self) -> None:
-        with open(get_packaged_path(CONFIG_FILE), "w") as f:
+        print(f'saving to: {get_config_path()}')
+        with open(get_config_path(), "w") as f:
             config = {
                 "hotkey": self.hotkey,
                 "opacity": self.opacity,
