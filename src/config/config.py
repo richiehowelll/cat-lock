@@ -5,7 +5,7 @@ import shutil
 from src.util.path_util import get_packaged_path, get_config_path
 from src.util.web_browser_util import open_about
 
-CONFIG_FILE = os.path.join("resources", "config", "config.json")
+BUNDLED_CONFIG_FILE = os.path.join("resources", "config", "config.json")
 DEFAULT_HOTKEY = "ctrl+l"
 
 
@@ -14,7 +14,7 @@ def load():
         with open(get_config_path(), "r") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        shutil.copy(get_packaged_path(CONFIG_FILE), get_config_path())
+        shutil.copy(get_packaged_path(BUNDLED_CONFIG_FILE), get_config_path())
         with open(get_config_path(), "r") as f:
             return json.load(f)
 
@@ -30,7 +30,6 @@ class Config:
             open_about()
             self.save()
         if not config:
-            # introduce new users
             open_about()
             self.save()
 
