@@ -11,13 +11,16 @@ class TrayIcon:
     def __init__(self, main):
         self.main = main
 
-    def set_opacity(self, opacity: int) -> None:
+    def set_opacity(self, opacity: float) -> None:
         self.main.config.opacity = opacity
         self.main.config.save()
 
     def toggle_notifications(self) -> None:
         self.main.config.notifications_enabled = not self.main.config.notifications_enabled
         self.main.config.save()
+
+    def is_opacity_checked(self, opacity: float) -> bool:
+        return self.main.config.opacity == opacity
 
     def open(self) -> None:
         path = os.path.join("resources", "img", "icon.png")
@@ -32,12 +35,12 @@ class TrayIcon:
                 checked=lambda item: self.main.config.notifications_enabled,
             ),
             MenuItem("Set Opacity", Menu(
-                MenuItem("5%", lambda: self.set_opacity(0.05)),
-                MenuItem("10%", lambda: self.set_opacity(0.1)),
-                MenuItem("30%", lambda: self.set_opacity(0.3)),
-                MenuItem("50%", lambda: self.set_opacity(0.5)),
-                MenuItem("70%", lambda: self.set_opacity(0.7)),
-                MenuItem("90%", lambda: self.set_opacity(0.9)),
+                MenuItem("5%", lambda: self.set_opacity(0.05), checked=lambda item: self.is_opacity_checked(0.05)),
+                MenuItem("10%", lambda: self.set_opacity(0.1), checked=lambda item: self.is_opacity_checked(0.1)),
+                MenuItem("30%", lambda: self.set_opacity(0.3), checked=lambda item: self.is_opacity_checked(0.3)),
+                MenuItem("50%", lambda: self.set_opacity(0.5), checked=lambda item: self.is_opacity_checked(0.5)),
+                MenuItem("70%", lambda: self.set_opacity(0.7), checked=lambda item: self.is_opacity_checked(0.7)),
+                MenuItem("90%", lambda: self.set_opacity(0.9), checked=lambda item: self.is_opacity_checked(0.9)),
             )),
             MenuItem("Support ☕", open_buy_me_a_coffee),
             MenuItem("Quit", self.main.quit_program),
