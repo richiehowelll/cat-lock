@@ -8,7 +8,7 @@ from src.util.path_util import get_packaged_path
 
 
 def open_about():
-    webbrowser.open("https://github.com/richiehowelll/CatLock", new=2)
+    webbrowser.open("https://catlock.app/about/", new=2)
 
 def open_buy_me_a_coffee():
     webbrowser.open("https://buymeacoffee.com/richiehowelll", new=2)
