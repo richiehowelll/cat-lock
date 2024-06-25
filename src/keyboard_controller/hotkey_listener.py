@@ -18,7 +18,7 @@ class HotkeyListener:
             self.main.hotkey_thread.start()
 
     def hotkey_listener(self) -> None:
-        keyboard.add_hotkey(self.main.config.hotkey, self.main.send_hotkey_signal, suppress=True)
+        keyboard.add_hotkey(self.main.config.hotkey, self.main.send_hotkey_signal, suppress=False)
         while self.main.listen_for_hotkey:
             time.sleep(1)
         keyboard.unhook_all_hotkeys()

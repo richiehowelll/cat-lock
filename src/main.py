@@ -75,7 +75,6 @@ class CatLockCore:
         self.reset_main_queue.put(True)
 
     def send_hotkey_signal(self) -> None:
-        keyboard.stash_state()
         self.show_overlay_queue.put(True)
 
     def quit_program(self, icon, item) -> None:
@@ -105,6 +104,7 @@ class CatLockCore:
             if not self.show_overlay_queue.empty():
                 self.show_overlay_queue.get(block=False)
                 overlay = OverlayWindow(main=self)
+                keyboard.stash_state()
                 overlay.open()
             if not self.reset_main_queue.empty():
                 self.reset()
