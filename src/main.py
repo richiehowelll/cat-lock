@@ -68,6 +68,7 @@ class CatLockCore:
     def unlock_keyboard(self, event=None) -> None:
         for key in self.blocked_keys:
             keyboard.unblock_key(key)
+        keyboard.release('ctrl')
         self.blocked_keys.clear()
         if self.root:
             self.root.destroy()
