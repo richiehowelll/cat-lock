@@ -15,3 +15,4 @@ class UpdateWindow:
             self.main.root.withdraw()
             if messagebox.askyesno('Update Available', 'A new version of CatLock is available. Do you want to update?'):
                 open_download()
+            self.main.root.destroy()
