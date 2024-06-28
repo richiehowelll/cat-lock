@@ -1,3 +1,4 @@
+import atexit
 import os
 import subprocess
 import sys
@@ -13,6 +14,7 @@ from src.os_controller.notifications import send_notification_in_thread
 from src.os_controller.tray_icon import TrayIcon
 from src.ui.overlay_window import OverlayWindow
 from src.ui.update_window import UpdateWindow
+from src.util.lockfile_handler import check_lockfile, remove_lockfile
 
 
 class CatLockCore:
@@ -80,6 +82,7 @@ class CatLockCore:
         self.show_overlay_queue.put(True)
 
     def quit_program(self, icon, item) -> None:
+        remove_lockfile()
         self.program_running = False
         self.unlock_keyboard()
         icon.stop()
@@ -102,6 +105,7 @@ class CatLockCore:
             time.sleep(1)
 
     def start(self) -> None:
+        check_lockfile()
         UpdateWindow(self).prompt_update()
         # hack to prevent right ctrl sticking
         keyboard.remap_key('right ctrl', 'left ctrl')
