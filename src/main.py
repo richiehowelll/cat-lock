@@ -101,6 +101,8 @@ class CatLockCore:
             time.sleep(1)
 
     def start(self) -> None:
+        # hack to prevent right ctrl sticking
+        keyboard.remap_key('right ctrl', 'left ctrl')
         while self.program_running:
             if not self.show_overlay_queue.empty():
                 self.show_overlay_queue.get(block=False)
