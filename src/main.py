@@ -12,6 +12,7 @@ from src.keyboard_controller.hotkey_listener import HotkeyListener
 from src.os_controller.notifications import send_notification_in_thread
 from src.os_controller.tray_icon import TrayIcon
 from src.ui.overlay_window import OverlayWindow
+from src.ui.update_window import UpdateWindow
 
 
 class CatLockCore:
@@ -101,6 +102,7 @@ class CatLockCore:
             time.sleep(1)
 
     def start(self) -> None:
+        UpdateWindow(self).prompt_update()
         # hack to prevent right ctrl sticking
         keyboard.remap_key('right ctrl', 'left ctrl')
         while self.program_running:

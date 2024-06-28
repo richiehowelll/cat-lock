@@ -2,3 +2,5 @@ keyboard~=0.13.5
 pystray~=0.19.5
 pillow~=10.3.0
 plyer~=2.1.0
+screeninfo~=0.8.1
+requests~=2.32.3
