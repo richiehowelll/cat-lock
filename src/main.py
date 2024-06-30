@@ -17,7 +17,6 @@ from src.util.lockfile_handler import check_lockfile, remove_lockfile
 class CatLockCore:
     def __init__(self) -> None:
         self.hotkey_thread = None
-        self.clear_pressed_events_thread = threading.Thread(target=clear_pressed_events, daemon=True)
         self.show_overlay_queue = Queue()
         self.config = Config()
         self.root = None
@@ -27,6 +26,8 @@ class CatLockCore:
         self.blocked_keys = set()
         self.changing_hotkey_queue = Queue()
         self.start_hotkey_listener()
+        self.clear_pressed_events_thread = threading.Thread(target=clear_pressed_events, daemon=True)
+        self.clear_pressed_events_thread.start()
         self.tray_icon_thread = threading.Thread(target=self.create_tray_icon, daemon=True)
         self.tray_icon_thread.start()
 
