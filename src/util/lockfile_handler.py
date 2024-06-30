@@ -1,8 +1,9 @@
 import os
 import signal
 from pathlib import Path
-working_dir = str(Path().resolve())
-LOCKFILE_PATH = os.path.join(working_dir, '.catlock', 'lockfile.lock')
+
+home = str(Path.home())
+LOCKFILE_PATH = os.path.join(home, '.catlock', 'lockfile.lock')
 
 
 def check_lockfile():
