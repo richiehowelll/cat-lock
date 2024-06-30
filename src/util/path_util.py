@@ -13,8 +13,8 @@ def get_packaged_path(path: str) -> str:
 
 
 def get_config_path() -> str:
-    home = str(Path.home())
-    config_dir = os.path.join(home, '.catlock', 'config')
+    working_dir = str(Path().resolve())
+    config_dir = os.path.join(working_dir, '.catlock', 'config')
     if not os.path.exists(config_dir):
         os.makedirs(config_dir)
     return os.path.join(config_dir, "config.json")
