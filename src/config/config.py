@@ -25,10 +25,6 @@ class Config:
         self.hotkey = config.get("hotkey", DEFAULT_HOTKEY) if config else DEFAULT_HOTKEY
         self.opacity = config.get("opacity", 0.3) if config else 0.3
         self.notifications_enabled = config.get("notificationsEnabled", True) if config else True
-        self.first_open = config.get("firstOpen", True) if config else True
-        if self.first_open:
-            open_about()
-            self.save()
         if not config:
             open_about()
             self.save()
@@ -40,6 +36,5 @@ class Config:
                 "hotkey": self.hotkey,
                 "opacity": self.opacity,
                 "notificationsEnabled": self.notifications_enabled,
-                "firstOpen": False
             }
             json.dump(config, f)
