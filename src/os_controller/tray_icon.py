@@ -28,13 +28,11 @@ class TrayIcon:
         draw = ImageDraw.Draw(image)
         draw.rectangle((16, 16, 48, 48), fill="white")
         menu = Menu(
-            MenuItem("About", open_about),
             MenuItem(
                 "Enable/Disable Notifications",
                 self.toggle_notifications,
                 checked=lambda item: self.main.config.notifications_enabled,
             ),
-            MenuItem("Help", open_help),
             MenuItem("Set Opacity", Menu(
                 MenuItem("5%", lambda: self.set_opacity(0.05), checked=lambda item: self.is_opacity_checked(0.05)),
                 MenuItem("10%", lambda: self.set_opacity(0.1), checked=lambda item: self.is_opacity_checked(0.1)),
@@ -43,6 +41,8 @@ class TrayIcon:
                 MenuItem("70%", lambda: self.set_opacity(0.7), checked=lambda item: self.is_opacity_checked(0.7)),
                 MenuItem("90%", lambda: self.set_opacity(0.9), checked=lambda item: self.is_opacity_checked(0.9)),
             )),
+            MenuItem("Help", open_help),
+            MenuItem("About", open_about),
             MenuItem("Support ☕", open_buy_me_a_coffee),
             MenuItem("Quit", self.main.quit_program),
         )
