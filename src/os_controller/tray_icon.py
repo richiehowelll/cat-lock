@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw
 from pystray import Icon, Menu, MenuItem
 
 from src.util.path_util import get_packaged_path
-from src.util.web_browser_util import open_about, open_buy_me_a_coffee
+from src.util.web_browser_util import open_about, open_buy_me_a_coffee, open_help
 
 
 class TrayIcon:
