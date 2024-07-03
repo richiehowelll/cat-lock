@@ -34,6 +34,7 @@ class TrayIcon:
                 self.toggle_notifications,
                 checked=lambda item: self.main.config.notifications_enabled,
             ),
+            MenuItem("Help", open_help),
             MenuItem("Set Opacity", Menu(
                 MenuItem("5%", lambda: self.set_opacity(0.05), checked=lambda item: self.is_opacity_checked(0.05)),
                 MenuItem("10%", lambda: self.set_opacity(0.1), checked=lambda item: self.is_opacity_checked(0.1)),
