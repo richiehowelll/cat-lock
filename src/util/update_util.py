@@ -1,6 +1,6 @@
 import requests
 
-VERSION = 'v1.0.0'
+VERSION = 'v1.0.1'
 
 LATEST_RELEASE_URL = 'https://api.github.com/repos/richiehowelll/cat-lock/releases/latest'
 
