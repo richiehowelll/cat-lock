@@ -2,7 +2,7 @@ import logging
 
 import requests
 
-VERSION = 'v1.1.0'
+VERSION = 'v1.2.0'
 
 LATEST_RELEASE_URL = 'https://api.github.com/repos/richiehowelll/cat-lock/releases/latest'
 
