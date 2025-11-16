@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 
 from src.ui.overlay_geometry import compute_overlay_geometry
 
@@ -76,9 +77,25 @@ class SettingsWindow:
         self.root.title("CatLock Settings")
         self.root.resizable(False, False)
         self.root.protocol("WM_DELETE_WINDOW", self._on_cancel)
-        self.root.minsize(260, 150)
+        self.root.minsize(320, 190)  # a bit wider
 
-        # Opacity slider: store as 5–90%, map to 0.05–0.90
+        # ---- Theming / style ----
+        style = ttk.Style(self.root)
+        # Try a modern theme if available
+        for candidate in ("vista", "clam", "default"):
+            try:
+                style.theme_use(candidate)
+                break
+            except tk.TclError:
+                continue
+
+        base_font = ("Segoe UI", 10)
+        style.configure("TLabel", font=base_font)
+        style.configure("Header.TLabel", font=("Segoe UI", 11, "bold"))
+        style.configure("TButton", font=base_font, padding=(8, 4))
+        # -------------------------
+
+        # Opacity slider: 5–90%, map to 0.05–0.90
         current_opacity_pct = int(self.main.config.opacity * 100)
         if current_opacity_pct < 5:
             current_opacity_pct = 5
@@ -92,64 +109,93 @@ class SettingsWindow:
             value=getattr(self.main.config, "overlay_y_percent", 25)
         )
 
-        frame = tk.Frame(self.root, padx=10, pady=10)
-        frame.pack(fill="both", expand=True)
+        # ---- Layout ----
+        container = ttk.Frame(self.root, padding=10)
+        container.pack(fill="both", expand=True)
+
+        # Header
+        header = ttk.Label(
+            container,
+            text="CatLock Settings",
+            style="Header.TLabel",
+        )
+        header.grid(row=0, column=0, sticky="w")
+
+        # Small subtitle
+        sub = ttk.Label(
+            container,
+            text="Adjust the overlay appearance while the keyboard is locked.",
+        )
+        sub.grid(row=1, column=0, sticky="w", pady=(0, 8))
 
         # Opacity controls
-        tk.Label(frame, text="Overlay opacity:").grid(row=0, column=0, sticky="w")
-        opacity_slider = tk.Scale(
-            frame,
+        opacity_frame = ttk.Frame(container)
+        opacity_frame.grid(row=2, column=0, sticky="ew", pady=(4, 0))
+        opacity_frame.columnconfigure(0, weight=1)
+
+        ttk.Label(opacity_frame, text="Overlay opacity:").grid(
+            row=0, column=0, sticky="w"
+        )
+        opacity_slider = ttk.Scale(
+            opacity_frame,
             from_=5,
             to=90,
             orient="horizontal",
             variable=self.opacity_var,
             command=lambda v: self._update_preview(),
         )
-        opacity_slider.grid(row=1, column=0, sticky="ew")
-        frame.grid_columnconfigure(0, weight=1)
+        opacity_slider.grid(row=1, column=0, sticky="ew", pady=(2, 0))
 
         # Vertical position controls
-        tk.Label(frame, text="Vertical position:").grid(
-            row=2, column=0, sticky="w", pady=(10, 0)
+        position_frame = ttk.Frame(container)
+        position_frame.grid(row=3, column=0, sticky="ew", pady=(10, 0))
+        position_frame.columnconfigure(0, weight=1)
+
+        ttk.Label(position_frame, text="Vertical position:").grid(
+            row=0, column=0, sticky="w"
         )
-        y_slider = tk.Scale(
-            frame,
+        y_slider = ttk.Scale(
+            position_frame,
             from_=0,
             to=100,
             orient="horizontal",
             variable=self.y_pos_var,
             command=lambda v: self._update_preview(),
         )
-        y_slider.grid(row=3, column=0, sticky="ew")
+        y_slider.grid(row=1, column=0, sticky="ew", pady=(2, 0))
 
-        buttons = tk.Frame(frame)
-        buttons.grid(row=4, column=0, pady=(10, 0), sticky="ew")
-        buttons.grid_columnconfigure(0, weight=1)
+        # Buttons (centered)
+        buttons = ttk.Frame(container)
+        buttons.grid(row=4, column=0, pady=(14, 0), sticky="ew")
+        buttons.columnconfigure(0, weight=1)
 
-        btn_container = tk.Frame(buttons)
+        btn_container = ttk.Frame(buttons)
         btn_container.grid(row=0, column=0)
 
-        cancel_btn = tk.Button(
-            btn_container,
-            text="Cancel",
-            command=self._on_cancel,
-            width=10,
-        )
-        cancel_btn.pack(side="left", padx=(0, 8), ipadx=4, ipady=2)
-
-        save_btn = tk.Button(
+        save_btn = ttk.Button(
             btn_container,
             text="Save",
             command=self._on_save,
             width=10,
         )
-        save_btn.pack(side="left", ipadx=4, ipady=2)
+        save_btn.pack(side="left", padx=(0, 8))
 
+        cancel_btn = ttk.Button(
+            btn_container,
+            text="Cancel",
+            command=self._on_cancel,
+            width=10,
+        )
+        cancel_btn.pack(side="left")
+
+        # ---- Preview overlay ----
         self._create_preview_window()
 
+        # Make settings window focused & modal so first click lands on buttons
         self.root.update_idletasks()
         self.root.lift()
         self.root.focus_force()
         self.root.grab_set()
 
         self.root.mainloop()
+
