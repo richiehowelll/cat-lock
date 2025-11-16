@@ -1,0 +1,125 @@
+name: Build & Release CatLock
+
+on:
+  push:
+    tags:
+      - "v*.*.*"   # e.g. v1.2.0
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Check tag and VERSION match
+        shell: bash
+        run: |
+          TAG_NAME="${GITHUB_REF_NAME}"   # e.g. v1.2.0
+          FILE_VERSION=$(python -c "import sys; sys.path.append('src'); from catlock.version import VERSION; print(VERSION)")
+          echo "Tag: $TAG_NAME"
+          echo "VERSION in code: $FILE_VERSION"
+          if [ "$TAG_NAME" != "$FILE_VERSION" ]; then
+            echo "Error: tag name ($TAG_NAME) does not match VERSION ($FILE_VERSION)"
+            exit 1
+          fi
+
+      - name: Build CatLock exe with PyInstaller
+        shell: pwsh
+        run: |
+          pyinstaller --onefile `
+            --add-data "resources/img/icon.ico;resources/img/" `
+            --add-data "resources/img/icon.png;resources/img/" `
+            --add-data "resources/config/config.json;resources/config/" `
+            --icon "resources/img/icon.ico" `
+            --hidden-import plyer.platforms.win.notification `
+            --noconsole `
+            --name "CatLock" `
+            "src/main.py"
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress
+
+      - name: Get numeric version for Inno
+        id: get_version
+        shell: bash
+        run: |
+          FILE_VERSION=$(python -c "import sys; sys.path.append('src'); from catlock.version import VERSION; print(VERSION.lstrip('v'))")
+          echo "file_version=$FILE_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build installer with Inno Setup
+        shell: pwsh
+        run: |
+          $version = "${{ steps.get_version.outputs.file_version }}"
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" `
+            "/DMyAppVersion=$version" `
+            "installer\CatLock.iss"
+
+      - name: Upload unsigned artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: catlock-unsigned
+          path: |
+            dist/CatLock.exe
+            build/CatLockSetup.exe
+
+  sign-binaries:
+    needs: build-windows
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download unsigned artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: catlock-unsigned
+          path: unsigned
+
+      # TODO: replace this with OSS signing service integration
+      - name: Copy artifacts to signed folder (placeholder)
+        run: |
+          mkdir -p signed
+          cp unsigned/* signed/
+
+      - name: Upload signed artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: catlock-signed
+          path: signed/
+
+  create-release:
+    needs: sign-binaries
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download signed artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: catlock-signed
+          path: signed
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: CatLock ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            signed/CatLock.exe
+            signed/CatLockSetup.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
