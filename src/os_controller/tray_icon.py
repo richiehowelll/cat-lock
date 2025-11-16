@@ -3,6 +3,7 @@ import os
 from PIL import Image, ImageDraw
 from pystray import Icon, Menu, MenuItem
 
+from src.ui.settings_window import SettingsWindow
 from src.util.path_util import get_packaged_path
 from src.util.web_browser_util import open_about, open_buy_me_a_coffee, open_help
 
@@ -34,14 +35,7 @@ class TrayIcon:
                 self.toggle_notifications,
                 checked=lambda item: self.main.config.notifications_enabled,
             ),
-            MenuItem("Set Opacity", Menu(
-                MenuItem("5%", lambda: self.set_opacity(0.05), checked=lambda item: self.is_opacity_checked(0.05)),
-                MenuItem("10%", lambda: self.set_opacity(0.1), checked=lambda item: self.is_opacity_checked(0.1)),
-                MenuItem("30%", lambda: self.set_opacity(0.3), checked=lambda item: self.is_opacity_checked(0.3)),
-                MenuItem("50%", lambda: self.set_opacity(0.5), checked=lambda item: self.is_opacity_checked(0.5)),
-                MenuItem("70%", lambda: self.set_opacity(0.7), checked=lambda item: self.is_opacity_checked(0.7)),
-                MenuItem("90%", lambda: self.set_opacity(0.9), checked=lambda item: self.is_opacity_checked(0.9)),
-            )),
+            MenuItem("Settings...", lambda: SettingsWindow(self.main).open()),
             MenuItem("About", Menu(
                 MenuItem("Help", open_help),
                 MenuItem("About", open_about),

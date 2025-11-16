@@ -21,10 +21,18 @@ def load():
 
 class Config:
     def __init__(self) -> None:
-        config = load()
-        self.hotkey = config.get("hotkey", DEFAULT_HOTKEY) if config else DEFAULT_HOTKEY
-        self.opacity = config.get("opacity", 0.3) if config else 0.3
-        self.notifications_enabled = config.get("notificationsEnabled", True) if config else True
+        config = load() or {}
+
+        self.hotkey = config.get("hotkey", DEFAULT_HOTKEY)
+        self.opacity = float(config.get("opacity", 0.3))
+        self.notifications_enabled = config.get("notificationsEnabled", True)
+
+        self.overlay_y_percent = int(config.get("overlayYPercent", 25))
+        if self.overlay_y_percent < 0:
+            self.overlay_y_percent = 0
+        if self.overlay_y_percent > 100:
+            self.overlay_y_percent = 100
+
         if not config:
             open_about()
             self.save()
@@ -36,5 +44,6 @@ class Config:
                 "hotkey": self.hotkey,
                 "opacity": self.opacity,
                 "notificationsEnabled": self.notifications_enabled,
+                "overlayYPercent": self.overlay_y_percent,
             }
             json.dump(config, f)
