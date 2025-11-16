@@ -5,6 +5,9 @@ on:
     tags:
       - "v*.*.*"   # e.g. v1.2.0
 
+permissions:
+  contents: write
+
 jobs:
   build-windows:
     runs-on: windows-latest
