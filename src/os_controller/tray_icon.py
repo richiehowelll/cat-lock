@@ -12,36 +12,49 @@ class TrayIcon:
     def __init__(self, main):
         self.main = main
 
-    def set_opacity(self, opacity: float) -> None:
-        self.main.config.opacity = opacity
-        self.main.config.save()
-
     def toggle_notifications(self) -> None:
         self.main.config.notifications_enabled = not self.main.config.notifications_enabled
         self.main.config.save()
 
-    def is_opacity_checked(self, opacity: float) -> bool:
-        return self.main.config.opacity == opacity
+    def open_settings(self) -> None:
+        SettingsWindow(self.main).open()
 
     def open(self) -> None:
         path = os.path.join("resources", "img", "icon.png")
         image = Image.open(get_packaged_path(path))
         draw = ImageDraw.Draw(image)
         draw.rectangle((16, 16, 48, 48), fill="white")
+
+        # Show the current hotkey in the label, if available
+        hotkey = getattr(self.main.config, "hotkey", None)
+        if hotkey:
+            lock_label = f"Lock keyboard ({hotkey})"
+        else:
+            lock_label = "Lock keyboard"
+
         menu = Menu(
-            MenuItem("Lock Keyboard", self.main.send_hotkey_signal),
+            MenuItem(lock_label, self.main.send_hotkey_signal),
+
+            Menu.SEPARATOR,
+
+            MenuItem("Settings…", self.open_settings),
             MenuItem(
-                "Enable/Disable Notifications",
+                "Show notifications",
                 self.toggle_notifications,
                 checked=lambda item: self.main.config.notifications_enabled,
             ),
-            MenuItem("Settings...", lambda: SettingsWindow(self.main).open()),
-            MenuItem("About", Menu(
-                MenuItem("Help", open_help),
-                MenuItem("About", open_about),
-                MenuItem("Support ☕", open_buy_me_a_coffee),
-            )),
+
+            MenuItem("Support ☕", open_buy_me_a_coffee),
+
+            Menu.SEPARATOR,
+
+            MenuItem("Help", open_help),
+            MenuItem("About CatLock", open_about),
+
+            Menu.SEPARATOR,
+
             MenuItem("Quit", self.main.quit_program),
         )
+
         tray_icon = Icon("CatLock", image, "CatLock", menu)
         tray_icon.run()

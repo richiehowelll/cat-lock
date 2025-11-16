@@ -82,7 +82,7 @@ class SettingsWindow:
         # ---- Theming / style ----
         style = ttk.Style(self.root)
         # Try a modern theme if available
-        for candidate in ("vista", "clam", "default"):
+        for candidate in ("vista", "default"):
             try:
                 style.theme_use(candidate)
                 break
@@ -180,10 +180,9 @@ class SettingsWindow:
         )
         cancel_btn.pack(side="left")
 
-        # ---- Preview overlay ----
         self._create_preview_window()
 
-        # Make settings window focused & modal so first click lands on buttons
+        # Make settings window focused and modal so first click lands on buttons
         self.root.update_idletasks()
         self.root.lift()
         self.root.focus_force()
