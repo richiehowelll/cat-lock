@@ -92,7 +92,8 @@ jobs:
       - name: Copy artifacts to signed folder (placeholder)
         run: |
           mkdir -p signed
-          cp unsigned/* signed/
+          # Copy all .exe files from anywhere under unsigned/ into signed/
+          find unsigned -type f -name '*.exe' -exec cp {} signed/ \;
 
       - name: Upload signed artifacts
         uses: actions/upload-artifact@v4
