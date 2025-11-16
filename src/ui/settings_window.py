@@ -113,20 +113,12 @@ class SettingsWindow:
         container = ttk.Frame(self.root, padding=10)
         container.pack(fill="both", expand=True)
 
-        # Header
-        header = ttk.Label(
-            container,
-            text="CatLock Settings",
-            style="Header.TLabel",
-        )
-        header.grid(row=0, column=0, sticky="w")
-
         # Small subtitle
         sub = ttk.Label(
             container,
-            text="Adjust the overlay appearance while the keyboard is locked.",
+            text="Adjust the overlay while the keyboard is locked.",
         )
-        sub.grid(row=1, column=0, sticky="w", pady=(0, 8))
+        sub.grid(row=0, column=0, sticky="w", pady=(0, 8))
 
         # Opacity controls
         opacity_frame = ttk.Frame(container)
