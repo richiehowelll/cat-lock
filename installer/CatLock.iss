@@ -27,9 +27,10 @@ Name: "startup"; Description: "Add CatLock to Windows startup"; GroupDescription
 [Registry]
 Root: HKCU; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "CatLock"; ValueData: """{app}\CatLock.exe"""; Flags: uninsdeletevalue; Tasks: startup
 
-[Run]
-Filename: "{cmd}"; Parameters: "/C copy ""{app}\CatLock.exe"" ""{userstartup}\CatLock.lnk"""; Flags: shellexec runhidden; Tasks: startup
+[InstallDelete]
+Type: files; Name: "{userstartup}\CatLock.lnk"
 
+[Run]
 Filename: "https://catlock.app/about/"; Description: "Visit website"; Flags: postinstall shellexec
 
 [Code]
