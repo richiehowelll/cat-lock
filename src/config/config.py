@@ -33,6 +33,8 @@ class Config:
         if self.overlay_y_percent > 100:
             self.overlay_y_percent = 100
 
+        self.user_guide_shown = bool(config.get("userGuideShown", False))
+
         if not config:
             open_about()
             self.save()
@@ -45,5 +47,6 @@ class Config:
                 "opacity": self.opacity,
                 "notificationsEnabled": self.notifications_enabled,
                 "overlayYPercent": self.overlay_y_percent,
+                "userGuideShown": self.user_guide_shown,
             }
             json.dump(config, f)

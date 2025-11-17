@@ -9,7 +9,7 @@ def open_buy_me_a_coffee():
     webbrowser.open("https://buymeacoffee.com/richiehowelll", new=2)
 
 
-def open_help():
+def open_faq():
     webbrowser.open("https://catlock.app/faq/", new=2)
 
 

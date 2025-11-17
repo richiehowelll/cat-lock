@@ -66,6 +66,11 @@ class CatLockCore:
         UpdateWindow(self).prompt_update()
         # hack to prevent right ctrl sticking
         keyboard.remap_key('right ctrl', 'left ctrl')
+
+        if not self.config.user_guide_shown:
+            from src.ui.user_guide_window import UserGuideWindow
+            UserGuideWindow(self).open()
+
         while self.program_running:
             if not self.show_overlay_queue.empty():
                 self.show_overlay_queue.get(block=False)

@@ -4,8 +4,9 @@ from PIL import Image, ImageDraw
 from pystray import Icon, Menu, MenuItem
 
 from src.ui.settings_window import SettingsWindow
+from src.ui.user_guide_window import UserGuideWindow
 from src.util.path_util import get_packaged_path
-from src.util.web_browser_util import open_about, open_buy_me_a_coffee, open_help
+from src.util.web_browser_util import open_about, open_buy_me_a_coffee, open_faq
 
 
 class TrayIcon:
@@ -19,16 +20,19 @@ class TrayIcon:
     def open_settings(self) -> None:
         SettingsWindow(self.main).open()
 
+    def open_user_guide(self) -> None:
+        UserGuideWindow(self.main).open()
+
     def open(self) -> None:
         path = os.path.join("resources", "img", "icon.png")
         image = Image.open(get_packaged_path(path))
         draw = ImageDraw.Draw(image)
         draw.rectangle((16, 16, 48, 48), fill="white")
 
-        # Show the current hotkey in the label, if available
         hotkey = getattr(self.main.config, "hotkey", None)
         if hotkey:
-            lock_label = f"Lock keyboard ({hotkey})"
+            hotkey_display = hotkey.upper()
+            lock_label = f"Lock keyboard ({hotkey_display})"
         else:
             lock_label = "Lock keyboard"
 
@@ -48,7 +52,8 @@ class TrayIcon:
 
             Menu.SEPARATOR,
 
-            MenuItem("Help", open_help),
+            MenuItem("User Guide", self.open_user_guide),
+            MenuItem("FAQ", open_faq),
             MenuItem("About CatLock", open_about),
 
             Menu.SEPARATOR,
