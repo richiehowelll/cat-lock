@@ -24,7 +24,7 @@ class Config:
         config = load() or {}
 
         self.hotkey = config.get("hotkey", DEFAULT_HOTKEY)
-        self.opacity = float(config.get("opacity", 0.3))
+        self.opacity = float(config.get("opacity", 0.8))
         self.notifications_enabled = config.get("notificationsEnabled", True)
 
         self.overlay_y_percent = int(config.get("overlayYPercent", 25))

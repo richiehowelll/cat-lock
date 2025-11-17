@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from src.ui.overlay_geometry import compute_overlay_geometry
+from src.ui.overlay_style import OVERLAY_TEXT_COLOR, OVERLAY_FONT, OVERLAY_BG_COLOR, OVERLAY_BORDER_COLOR
 
 
 class SettingsWindow:
@@ -45,15 +46,18 @@ class SettingsWindow:
         self.preview.attributes("-topmost", True)
         self.preview.attributes("-alpha", self.opacity_var.get() / 100.0)
 
-        frame = tk.Frame(self.preview, bg="black")
-        frame.pack(expand=True, fill="both")
+        outer = tk.Frame(self.preview, bg=OVERLAY_BORDER_COLOR)
+        outer.pack(expand=True, fill="both", padx=1, pady=1)
+
+        inner = tk.Frame(outer, bg=OVERLAY_BG_COLOR, padx=20, pady=16)
+        inner.pack(expand=True, fill="both")
 
         label = tk.Label(
-            frame,
+            inner,
             text="CatLock preview",
-            fg="white",
-            bg="black",
-            font=("Segoe UI", 10),
+            fg=OVERLAY_TEXT_COLOR,
+            bg=OVERLAY_BG_COLOR,
+            font=OVERLAY_FONT,
             justify="center",
         )
         label.pack(expand=True, fill="both")
@@ -79,9 +83,7 @@ class SettingsWindow:
         self.root.protocol("WM_DELETE_WINDOW", self._on_cancel)
         self.root.minsize(320, 190)  # a bit wider
 
-        # ---- Theming / style ----
         style = ttk.Style(self.root)
-        # Try a modern theme if available
         for candidate in ("vista", "default"):
             try:
                 style.theme_use(candidate)
@@ -93,7 +95,6 @@ class SettingsWindow:
         style.configure("TLabel", font=base_font)
         style.configure("Header.TLabel", font=("Segoe UI", 11, "bold"))
         style.configure("TButton", font=base_font, padding=(8, 4))
-        # -------------------------
 
         # Opacity slider: 5–90%, map to 0.05–0.90
         current_opacity_pct = int(self.main.config.opacity * 100)
@@ -113,14 +114,12 @@ class SettingsWindow:
         container = ttk.Frame(self.root, padding=10)
         container.pack(fill="both", expand=True)
 
-        # Small subtitle
         sub = ttk.Label(
             container,
             text="Adjust the overlay while the keyboard is locked.",
         )
         sub.grid(row=0, column=0, sticky="w", pady=(0, 8))
 
-        # Opacity controls
         opacity_frame = ttk.Frame(container)
         opacity_frame.grid(row=2, column=0, sticky="ew", pady=(4, 0))
         opacity_frame.columnconfigure(0, weight=1)
@@ -138,7 +137,6 @@ class SettingsWindow:
         )
         opacity_slider.grid(row=1, column=0, sticky="ew", pady=(2, 0))
 
-        # Vertical position controls
         position_frame = ttk.Frame(container)
         position_frame.grid(row=3, column=0, sticky="ew", pady=(10, 0))
         position_frame.columnconfigure(0, weight=1)
@@ -156,7 +154,6 @@ class SettingsWindow:
         )
         y_slider.grid(row=1, column=0, sticky="ew", pady=(2, 0))
 
-        # Buttons (centered)
         buttons = ttk.Frame(container)
         buttons.grid(row=4, column=0, pady=(14, 0), sticky="ew")
         buttons.columnconfigure(0, weight=1)
@@ -182,7 +179,6 @@ class SettingsWindow:
 
         self._create_preview_window()
 
-        # Make settings window focused and modal so first click lands on buttons
         self.root.update_idletasks()
         self.root.lift()
         self.root.focus_force()
