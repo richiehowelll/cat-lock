@@ -53,8 +53,11 @@ class UserGuideWindow:
         text = (
             f"• Press {hotkey_display} to lock your keyboard.\n"
             "• A small overlay will appear on your screen.\n"
-            "• Click the overlay box to unlock."
+            "• Click the overlay box to unlock.\n"
+            "• You can adjust the overlay's opacity and position anytime\n"
+            "  from the CatLock tray menu under Settings."
         )
+
         desc = ttk.Label(container, text=text, justify="left")
         desc.grid(row=1, column=0, sticky="w", pady=(4, 8))
 
