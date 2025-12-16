@@ -10,14 +10,31 @@ Currently only supported on **Windows**
 - Access configuration options via a convenient system tray menu:
     - Adjust overlay opacity to suit your preferences.
     - Enable or disable system notifications when the keyboard is locked.
-## Build an executable
-```bash
-pip install pyinstaller
+## Installation
+
+### Option 1: Build Locally (Recommended)
+
+Building locally avoids Windows SmartScreen warnings that can block downloaded executables.
+
+**Easy method** - Just run the build script:
+```
+build.bat
 ```
 
+**Manual method:**
 ```bash
-pyinstaller --onefile --add-data="./resources/img/icon.ico:./resources/img/" --add-data="./resources/img/icon.png:./resources/img/" --add-data="./resources/config/config.json:./resources/config/" --icon="./resources/img/icon.ico" --hidden-import plyer.platforms.win.notification --noconsole --name="CatLock" "./src/main.py"
+pip install -r requirements.txt
+pip install pyinstaller
+pyinstaller --onefile --add-data="./resources/img/icon.ico;./resources/img/" --add-data="./resources/img/icon.png;./resources/img/" --add-data="./resources/config/config.json;./resources/config/" --icon="./resources/img/icon.ico" --hidden-import plyer.platforms.win.notification --noconsole --name="CatLock" "./src/main.py"
 ```
+
+The executable will be in the `dist/` folder.
+
+> **Note:** If Windows Defender flags your locally-built exe, add the `dist` folder to Windows Security exclusions.
+
+### Option 2: Download Pre-built Release
+
+Pre-built executables are available on the [Releases](../../releases) page. Note that Windows SmartScreen may warn about unsigned executables from the internet.
 ## Caveats
 - Relies on https://github.com/boppreh/keyboard/ which only has full support for Windows
 - OS bound hotkeys take precedence such as `ctrl+alt+del` (this way you don't get locked out if something goes wrong)
