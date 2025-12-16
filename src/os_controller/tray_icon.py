@@ -3,51 +3,63 @@ import os
 from PIL import Image, ImageDraw
 from pystray import Icon, Menu, MenuItem
 
+from src.ui.settings_window import SettingsWindow
+from src.ui.user_guide_window import UserGuideWindow
 from src.util.path_util import get_packaged_path
-from src.util.web_browser_util import open_about, open_buy_me_a_coffee, open_help
+from src.util.web_browser_util import open_about, open_buy_me_a_coffee, open_faq
 
 
 class TrayIcon:
     def __init__(self, main):
         self.main = main
 
-    def set_opacity(self, opacity: float) -> None:
-        self.main.config.opacity = opacity
-        self.main.config.save()
-
     def toggle_notifications(self) -> None:
         self.main.config.notifications_enabled = not self.main.config.notifications_enabled
         self.main.config.save()
 
-    def is_opacity_checked(self, opacity: float) -> bool:
-        return self.main.config.opacity == opacity
+    def open_settings(self) -> None:
+        SettingsWindow(self.main).open()
+
+    def open_user_guide(self) -> None:
+        UserGuideWindow(self.main).open()
 
     def open(self) -> None:
         path = os.path.join("resources", "img", "icon.png")
         image = Image.open(get_packaged_path(path))
         draw = ImageDraw.Draw(image)
         draw.rectangle((16, 16, 48, 48), fill="white")
+
+        hotkey = getattr(self.main.config, "hotkey", None)
+        if hotkey:
+            hotkey_display = hotkey.upper()
+            lock_label = f"Lock keyboard ({hotkey_display})"
+        else:
+            lock_label = "Lock keyboard"
+
         menu = Menu(
-            MenuItem("Lock Keyboard", self.main.send_hotkey_signal),
+            MenuItem(lock_label, self.main.send_hotkey_signal),
+
+            Menu.SEPARATOR,
+
+            MenuItem("Settings…", self.open_settings),
             MenuItem(
-                "Enable/Disable Notifications",
+                "Show notifications",
                 self.toggle_notifications,
                 checked=lambda item: self.main.config.notifications_enabled,
             ),
-            MenuItem("Set Opacity", Menu(
-                MenuItem("5%", lambda: self.set_opacity(0.05), checked=lambda item: self.is_opacity_checked(0.05)),
-                MenuItem("10%", lambda: self.set_opacity(0.1), checked=lambda item: self.is_opacity_checked(0.1)),
-                MenuItem("30%", lambda: self.set_opacity(0.3), checked=lambda item: self.is_opacity_checked(0.3)),
-                MenuItem("50%", lambda: self.set_opacity(0.5), checked=lambda item: self.is_opacity_checked(0.5)),
-                MenuItem("70%", lambda: self.set_opacity(0.7), checked=lambda item: self.is_opacity_checked(0.7)),
-                MenuItem("90%", lambda: self.set_opacity(0.9), checked=lambda item: self.is_opacity_checked(0.9)),
-            )),
-            MenuItem("About", Menu(
-                MenuItem("Help", open_help),
-                MenuItem("About", open_about),
-                MenuItem("Support ☕", open_buy_me_a_coffee),
-            )),
+
+            MenuItem("Support ☕", open_buy_me_a_coffee),
+
+            Menu.SEPARATOR,
+
+            MenuItem("User Guide", self.open_user_guide),
+            MenuItem("FAQ", open_faq),
+            MenuItem("About CatLock", open_about),
+
+            Menu.SEPARATOR,
+
             MenuItem("Quit", self.main.quit_program),
         )
+
         tray_icon = Icon("CatLock", image, "CatLock", menu)
         tray_icon.run()
