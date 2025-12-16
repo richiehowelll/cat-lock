@@ -25,7 +25,7 @@ pyinstaller --onefile --add-data="./resources/img/icon.ico:./resources/img/" --a
 ## Support
 If you found this project helpful or want to support my work, consider buying me a coffee!
 
-<a href="https://buymeacoffee.com/richiehowelll" target="_blank"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=yourusername&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff"></a>
+<a href="https://www.buymeacoffee.com/richiehowelll" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
 
 Your contributions will help maintain and improve this project. Thank you!
 
