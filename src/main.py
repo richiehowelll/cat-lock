@@ -72,13 +72,14 @@ class CatLockCore:
         self.settings_window = None
 
     def open_settings_window(self) -> None:
-        if self.settings_window and self.settings_window.is_open():
-            self.settings_window.focus()
-            return
+        if self.settings_window is None:
+            self.settings_window = SettingsWindow(self)
+            self.settings_window.on_close = self._clear_settings_window
 
-        self.settings_window = SettingsWindow(self)
-        self.settings_window.on_close = self._clear_settings_window
-        self.settings_window.open()
+        if self.settings_window.is_open():
+            self.settings_window.focus()
+        else:
+            self.settings_window.open()
 
     def _shutdown_ui(self, icon=None) -> None:
         self.unlock_keyboard()
