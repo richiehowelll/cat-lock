@@ -16,7 +16,7 @@ class UserGuideWindow:
         self.root.destroy()
 
     def open(self):
-        self.root = tk.Tk()
+        self.root = tk.Toplevel(self.main.root)
         self.root.title("Welcome to CatLock")
         self.root.resizable(False, False)
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
@@ -84,5 +84,4 @@ class UserGuideWindow:
         self.root.lift()
         self.root.focus_force()
         self.root.grab_set()
-
-        self.root.mainloop()
+        self.root.transient(self.main.root)

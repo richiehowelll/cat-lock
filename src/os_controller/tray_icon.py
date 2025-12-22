@@ -3,7 +3,6 @@ import os
 from PIL import Image, ImageDraw
 from pystray import Icon, Menu, MenuItem
 
-from src.ui.settings_window import SettingsWindow
 from src.ui.user_guide_window import UserGuideWindow
 from src.util.path_util import get_packaged_path
 from src.util.web_browser_util import open_about, open_buy_me_a_coffee, open_faq
@@ -12,22 +11,29 @@ from src.util.web_browser_util import open_about, open_buy_me_a_coffee, open_faq
 class TrayIcon:
     def __init__(self, main):
         self.main = main
+        self._icon_image = None
+
+    def _get_icon_image(self):
+        if self._icon_image is None:
+            path = os.path.join("resources", "img", "icon.png")
+            image = Image.open(get_packaged_path(path))
+            draw = ImageDraw.Draw(image)
+            draw.rectangle((16, 16, 48, 48), fill="white")
+            self._icon_image = image
+        return self._icon_image
 
     def toggle_notifications(self) -> None:
         self.main.config.notifications_enabled = not self.main.config.notifications_enabled
         self.main.config.save()
 
     def open_settings(self) -> None:
-        SettingsWindow(self.main).open()
+        self.main.schedule_on_ui_thread(self.main.open_settings_window)
 
     def open_user_guide(self) -> None:
-        UserGuideWindow(self.main).open()
+        self.main.schedule_on_ui_thread(lambda: UserGuideWindow(self.main).open())
 
     def open(self) -> None:
-        path = os.path.join("resources", "img", "icon.png")
-        image = Image.open(get_packaged_path(path))
-        draw = ImageDraw.Draw(image)
-        draw.rectangle((16, 16, 48, 48), fill="white")
+        image = self._get_icon_image()
 
         hotkey = getattr(self.main.config, "hotkey", None)
         if hotkey:

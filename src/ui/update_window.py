@@ -11,8 +11,11 @@ class UpdateWindow:
 
     def prompt_update(self):
         if is_update_available():
-            self.main.root = tk.Tk()
             self.main.root.withdraw()
-            if messagebox.askyesno('Update Available', 'A new version of CatLock is available. Do you want to update?'):
+            self.main.root.update_idletasks()
+            if messagebox.askyesno(
+                'Update Available',
+                'A new version of CatLock is available. Do you want to update?',
+                parent=self.main.root,
+            ):
                 open_download()
-            self.main.root.destroy()

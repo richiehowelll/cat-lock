@@ -3,8 +3,8 @@ import time
 import keyboard
 
 
-def clear_pressed_events() -> None:
-    while True:
+def clear_pressed_events(is_running) -> None:
+    while is_running():
         # Hotkeys stop working after windows locks & unlocks
         # https://github.com/boppreh/keyboard/issues/223
         deleted = []

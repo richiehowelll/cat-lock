@@ -10,10 +10,25 @@ class SettingsWindow:
         self.main = main
         self.root = None
         self.preview = None
+        self.on_close = None
+        self._in_cleanup = False
+
+    def is_open(self):
+        return self.root is not None and self.root.winfo_exists()
+
+    def focus(self):
+        if self.is_open():
+            self.root.deiconify()
+            self.root.lift()
+            self.root.focus_force()
+            self._create_preview_window()
+            self._update_preview()
 
     def _update_preview(self, *args):
         if self.preview is None or not self.preview.winfo_exists():
-            return
+            self._create_preview_window()
+            if self.preview is None or not self.preview.winfo_exists():
+                return
 
         y_percent = self.y_pos_var.get()
         overlay_width, overlay_height, x, y = compute_overlay_geometry(
@@ -26,58 +41,81 @@ class SettingsWindow:
         self.preview.attributes("-alpha", self.opacity_var.get() / 100.0)
 
     def _create_preview_window(self):
-        y_percent = self.y_pos_var.get()
-        overlay_width, overlay_height, x, y = compute_overlay_geometry(
-            y_percent,
-            overlay_width=420,
-            overlay_height=120,
-        )
+        """Create the preview window if missing and ensure it's visible."""
+        if self.preview is None or not self.preview.winfo_exists():
+            y_percent = self.y_pos_var.get()
+            overlay_width, overlay_height, x, y = compute_overlay_geometry(
+                y_percent,
+                overlay_width=420,
+                overlay_height=120,
+            )
 
-        # in case there's an old live one
+            self.preview = tk.Toplevel(self.root)
+            self.preview.overrideredirect(True)
+            self.preview.geometry(f"{overlay_width}x{overlay_height}+{x}+{y}")
+            self.preview.attributes("-topmost", True)
+            self.preview.attributes("-alpha", self.opacity_var.get() / 100.0)
+            self.preview.transient(self.root)
+
+            outer = tk.Frame(self.preview, bg=OVERLAY_BORDER_COLOR)
+            outer.pack(expand=True, fill="both", padx=1, pady=1)
+
+            inner = tk.Frame(outer, bg=OVERLAY_BG_COLOR, padx=20, pady=16)
+            inner.pack(expand=True, fill="both")
+
+            label = tk.Label(
+                inner,
+                text="CatLock preview",
+                fg=OVERLAY_TEXT_COLOR,
+                bg=OVERLAY_BG_COLOR,
+                font=OVERLAY_FONT,
+                justify="center",
+            )
+            label.pack(expand=True, fill="both")
+        else:
+            try:
+                self.preview.deiconify()
+                self.preview.lift()
+            except tk.TclError:
+                # Recreate if the window was torn down unexpectedly
+                self.preview = None
+                self._create_preview_window()
+
+    def _cleanup(self):
+        if self._in_cleanup:
+            return
+        self._in_cleanup = True
         if self.preview is not None and self.preview.winfo_exists():
             try:
                 self.preview.destroy()
             except tk.TclError:
                 pass
+        self.preview = None
 
-        self.preview = tk.Toplevel(self.root)
-        self.preview.overrideredirect(True)
-        self.preview.geometry(f"{overlay_width}x{overlay_height}+{x}+{y}")
-        self.preview.attributes("-topmost", True)
-        self.preview.attributes("-alpha", self.opacity_var.get() / 100.0)
+        if self.root is not None and self.root.winfo_exists():
+            try:
+                self.root.destroy()
+            except tk.TclError:
+                pass
+        self.root = None
 
-        outer = tk.Frame(self.preview, bg=OVERLAY_BORDER_COLOR)
-        outer.pack(expand=True, fill="both", padx=1, pady=1)
-
-        inner = tk.Frame(outer, bg=OVERLAY_BG_COLOR, padx=20, pady=16)
-        inner.pack(expand=True, fill="both")
-
-        label = tk.Label(
-            inner,
-            text="CatLock preview",
-            fg=OVERLAY_TEXT_COLOR,
-            bg=OVERLAY_BG_COLOR,
-            font=OVERLAY_FONT,
-            justify="center",
-        )
-        label.pack(expand=True, fill="both")
+        if self.on_close:
+            cb, self.on_close = self.on_close, None
+            cb()
 
     def _on_save(self):
         self.main.config.opacity = self.opacity_var.get() / 100.0
         self.main.config.overlay_y_percent = self.y_pos_var.get()
         self.main.config.save()
 
-        if self.preview is not None and self.preview.winfo_exists():
-            self.preview.destroy()
-        self.root.destroy()
+        self._cleanup()
 
     def _on_cancel(self):
-        if self.preview is not None and self.preview.winfo_exists():
-            self.preview.destroy()
-        self.root.destroy()
+        self._cleanup()
 
     def open(self):
-        self.root = tk.Tk()
+        self._in_cleanup = False
+        self.root = tk.Toplevel(self.main.root)
         self.root.title("CatLock Settings")
         self.root.resizable(False, False)
         self.root.protocol("WM_DELETE_WINDOW", self._on_cancel)
@@ -103,10 +141,11 @@ class SettingsWindow:
         if current_opacity_pct > 90:
             current_opacity_pct = 90
 
-        self.opacity_var = tk.IntVar(value=current_opacity_pct)
+        self.opacity_var = tk.IntVar(master=self.root, value=current_opacity_pct)
 
         # Vertical position percent: 0–100 from config
         self.y_pos_var = tk.IntVar(
+            master=self.root,
             value=getattr(self.main.config, "overlay_y_percent", 25)
         )
 
@@ -182,7 +221,11 @@ class SettingsWindow:
         self.root.update_idletasks()
         self.root.lift()
         self.root.focus_force()
-        self.root.grab_set()
+        try:
+            self.root.grab_set()
+        except tk.TclError:
+            # If grab fails (e.g., window not yet viewable), continue without modal grab
+            pass
 
-        self.root.mainloop()
+        self.root.transient(self.main.root)
 
