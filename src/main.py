@@ -26,7 +26,9 @@ class CatLockCore:
         self.blocked_keys = set()
         self.changing_hotkey_queue = Queue()
         self.start_hotkey_listener()
-        self.clear_pressed_events_thread = threading.Thread(target=clear_pressed_events, daemon=True)
+        self.clear_pressed_events_thread = threading.Thread(
+            target=clear_pressed_events, args=(lambda: self.program_running,), daemon=True
+        )
         self.clear_pressed_events_thread.start()
         self.tray_icon_thread = threading.Thread(target=self.create_tray_icon, daemon=True)
         self.tray_icon_thread.start()
@@ -49,7 +51,8 @@ class CatLockCore:
             keyboard.unblock_key(key)
         self.blocked_keys.clear()
         if self.root:
-            self.root.destroy()
+            self.root.withdraw()
+            self.root.quit()
         keyboard.stash_state()
 
     def send_hotkey_signal(self) -> None:
@@ -58,7 +61,10 @@ class CatLockCore:
     def quit_program(self, icon, item) -> None:
         remove_lockfile()
         self.program_running = False
+        self.listen_for_hotkey = False
         self.unlock_keyboard()
+        if self.root:
+            self.root.destroy()
         icon.stop()
 
     def start(self) -> None:
