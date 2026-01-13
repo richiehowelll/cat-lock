@@ -84,6 +84,10 @@ jobs:
     needs: build-windows
     runs-on: ubuntu-latest
 
+    permissions:
+      actions: read
+      contents: read
+
     steps:
       - name: Download unsigned artifacts
         uses: actions/download-artifact@v4
@@ -91,12 +95,37 @@ jobs:
           name: catlock-unsigned
           path: unsigned
 
-      # TODO: replace this with OSS signing service integration
-      - name: Copy artifacts to signed folder (placeholder)
+      - name: Create unsigned signing package (zip)
+        run: |
+          mkdir -p signing-input
+          cp unsigned/dist/CatLock.exe signing-input/CatLock.exe
+          cp unsigned/build/CatLockSetup.exe signing-input/CatLockSetup.exe
+          (cd signing-input && zip -r ../catlock-unsigned.zip .)
+
+      - name: Upload unsigned zip for SignPath
+        id: upload-unsigned-zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: catlock-unsigned-zip
+          path: catlock-unsigned.zip
+
+      - name: Sign with SignPath
+        id: signpath
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: "${{ secrets.SIGNPATH_API_TOKEN }}"
+          organization-id: "${{ secrets.SIGNPATH_ORG_ID }}"
+          project-slug: "cat-lock"
+          signing-policy-slug: "test-signing"
+          github-artifact-id: "${{ steps.upload-unsigned-zip.outputs.artifact-id }}"
+          wait-for-completion: true
+          output-artifact-directory: "signed-zip"
+
+      - name: Prepare signed outputs
         run: |
           mkdir -p signed
-          # Copy all .exe files from anywhere under unsigned/ into signed/
-          find unsigned -type f -name '*.exe' -exec cp {} signed/ \;
+          cp signed-zip/CatLock.exe signed/CatLock.exe
+          cp signed-zip/CatLockSetup.exe signed/CatLockSetup.exe
 
       - name: Upload signed artifacts
         uses: actions/upload-artifact@v4
