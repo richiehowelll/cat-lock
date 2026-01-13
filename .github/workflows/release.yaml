@@ -124,8 +124,6 @@ jobs:
       - name: Extract signed zip and stage outputs
         run: |
           ls -la signed-zip
-      
-          # The SignPath action downloaded the signed artifact as a zip file inside signed-zip/
           unzip -o signed-zip/catlock-unsigned.zip -d signed-zip/extracted
           mkdir -p signed
           cp signed-zip/extracted/CatLock.exe signed/CatLock.exe
