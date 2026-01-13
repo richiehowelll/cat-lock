@@ -121,30 +121,16 @@ jobs:
           wait-for-completion: true
           output-artifact-directory: "signed-zip"
 
-      - name: Debug signed artifact layout (and fail)
+      - name: Extract signed zip and stage outputs
         run: |
-          echo "==== signed-zip directory tree (depth 6) ===="
-          if [ -d "signed-zip" ]; then
-            find signed-zip -maxdepth 6 -print
-          else
-            echo "signed-zip does not exist"
-            exit 1
-          fi
+          ls -la signed-zip
       
-          echo ""
-          echo "==== Files that look like the outputs we want ===="
-          echo "-- CatLock.exe matches --"
-          find signed-zip -type f -name "CatLock.exe" -print || true
-      
-          echo "-- CatLockSetup.exe matches --"
-          find signed-zip -type f -name "CatLockSetup.exe" -print || true
-      
-          echo ""
-          echo "==== Top-level listing ===="
-          ls -la signed-zip || true
-      
-          echo ""
-          exit 1
+          # The SignPath action downloaded the signed artifact as a zip file inside signed-zip/
+          unzip -o signed-zip/catlock-unsigned.zip -d signed-zip/extracted
+          mkdir -p signed
+          cp signed-zip/extracted/CatLock.exe signed/CatLock.exe
+          cp signed-zip/extracted/CatLockSetup.exe signed/CatLockSetup.exe
+
 
       - name: Upload signed artifacts
         uses: actions/upload-artifact@v4
