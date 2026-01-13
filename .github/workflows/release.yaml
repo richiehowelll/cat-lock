@@ -121,11 +121,30 @@ jobs:
           wait-for-completion: true
           output-artifact-directory: "signed-zip"
 
-      - name: Prepare signed outputs
+      - name: Debug signed artifact layout (and fail)
         run: |
-          mkdir -p signed
-          cp signed-zip/CatLock.exe signed/CatLock.exe
-          cp signed-zip/CatLockSetup.exe signed/CatLockSetup.exe
+          echo "==== signed-zip directory tree (depth 6) ===="
+          if [ -d "signed-zip" ]; then
+            find signed-zip -maxdepth 6 -print
+          else
+            echo "signed-zip does not exist"
+            exit 1
+          fi
+      
+          echo ""
+          echo "==== Files that look like the outputs we want ===="
+          echo "-- CatLock.exe matches --"
+          find signed-zip -type f -name "CatLock.exe" -print || true
+      
+          echo "-- CatLockSetup.exe matches --"
+          find signed-zip -type f -name "CatLockSetup.exe" -print || true
+      
+          echo ""
+          echo "==== Top-level listing ===="
+          ls -la signed-zip || true
+      
+          echo ""
+          exit 1
 
       - name: Upload signed artifacts
         uses: actions/upload-artifact@v4
