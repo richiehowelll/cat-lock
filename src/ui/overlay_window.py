@@ -78,5 +78,14 @@ class OverlayWindow:
 
         target_alpha = getattr(self.main.config, "opacity", 0.8)
         self._start_fade_in(target_alpha=target_alpha)
+        self._poll_for_shutdown()
 
         self.main.root.mainloop()
+
+    def _poll_for_shutdown(self) -> None:
+        if not self.main.root or not self.main.root.winfo_exists():
+            return
+        if not self.main.program_running:
+            self.main.unlock_keyboard()
+            return
+        self.main.root.after(100, self._poll_for_shutdown)

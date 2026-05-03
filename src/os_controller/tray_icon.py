@@ -3,8 +3,6 @@ import os
 from PIL import Image, ImageDraw
 from pystray import Icon, Menu, MenuItem
 
-from src.ui.settings_window import SettingsWindow
-from src.ui.user_guide_window import UserGuideWindow
 from src.util.path_util import get_packaged_path
 from src.util.web_browser_util import open_about, open_buy_me_a_coffee, open_faq
 
@@ -18,10 +16,10 @@ class TrayIcon:
         self.main.config.save()
 
     def open_settings(self) -> None:
-        SettingsWindow(self.main).open()
+        self.main.send_ui_action("settings")
 
     def open_user_guide(self) -> None:
-        UserGuideWindow(self.main).open()
+        self.main.send_ui_action("user_guide")
 
     def open(self) -> None:
         path = os.path.join("resources", "img", "icon.png")

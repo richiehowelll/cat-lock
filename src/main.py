@@ -1,6 +1,6 @@
 import threading
 import time
-from queue import Queue
+from queue import Empty, Queue
 
 import keyboard
 
@@ -18,11 +18,16 @@ class CatLockCore:
     def __init__(self) -> None:
         self.hotkey_thread = None
         self.show_overlay_queue = Queue()
+        self.ui_action_queue = Queue()
         self.config = Config()
         self.root = None
         self.hotkey_lock = threading.Lock()
+        self.hotkey_stop_event = None
+        self.lock_state_lock = threading.Lock()
         self.listen_for_hotkey = True
         self.program_running = True
+        self.is_locked = False
+        self.lock_request_pending = False
         self.blocked_keys = set()
         self.changing_hotkey_queue = Queue()
         self.start_hotkey_listener()
@@ -38,6 +43,8 @@ class CatLockCore:
         HotkeyListener(self).start_hotkey_listener_thread()
 
     def lock_keyboard(self) -> None:
+        with self.lock_state_lock:
+            self.is_locked = True
         self.blocked_keys.clear()
         for i in range(150):
             keyboard.block_key(i)
@@ -50,15 +57,43 @@ class CatLockCore:
         self.blocked_keys.clear()
         if self.root:
             self.root.destroy()
+            self.root = None
         keyboard.stash_state()
+        with self.lock_state_lock:
+            self.is_locked = False
+            self.lock_request_pending = False
 
     def send_hotkey_signal(self) -> None:
+        with self.lock_state_lock:
+            if self.is_locked or self.lock_request_pending:
+                return
+            self.lock_request_pending = True
         self.show_overlay_queue.put(True)
+
+    def send_ui_action(self, action: str) -> None:
+        self.ui_action_queue.put(action)
+
+    def process_ui_actions(self) -> None:
+        while True:
+            try:
+                action = self.ui_action_queue.get(block=False)
+            except Empty:
+                return
+
+            if action == "settings":
+                from src.ui.settings_window import SettingsWindow
+                SettingsWindow(self).open()
+            elif action == "user_guide":
+                from src.ui.user_guide_window import UserGuideWindow
+                UserGuideWindow(self).open()
+            elif action == "quit":
+                self.program_running = False
+                self.unlock_keyboard()
 
     def quit_program(self, icon, item) -> None:
         remove_lockfile()
         self.program_running = False
-        self.unlock_keyboard()
+        self.send_ui_action("quit")
         icon.stop()
 
     def start(self) -> None:
@@ -71,9 +106,12 @@ class CatLockCore:
             from src.ui.user_guide_window import UserGuideWindow
             UserGuideWindow(self).open()
 
-        while self.program_running:
+        while self.program_running or not self.ui_action_queue.empty():
+            self.process_ui_actions()
             if not self.show_overlay_queue.empty():
                 self.show_overlay_queue.get(block=False)
+                while not self.show_overlay_queue.empty():
+                    self.show_overlay_queue.get(block=False)
                 overlay = OverlayWindow(main=self)
                 keyboard.stash_state()
                 overlay.open()
