@@ -10,6 +10,22 @@ Currently only supported on **Windows**
 - Access configuration options via a convenient system tray menu:
     - Adjust overlay opacity to suit your preferences.
     - Enable or disable system notifications when the keyboard is locked.
+
+## Code signing policy
+
+Free code signing provided by SignPath.io, certificate by SignPath Foundation.
+
+### Team roles
+
+- Committers and reviewers: Project maintainer (https://github.com/richiehowelll)
+- Approvers: Project maintainer (https://github.com/richiehowelll)
+
+### Privacy policy
+
+This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.
+
+CatLock does not collect, transmit, or store personal data. Any third-party libraries used by this project operate locally on the user’s system.
+
 ## Build an executable
 ```bash
 pip install pyinstaller
