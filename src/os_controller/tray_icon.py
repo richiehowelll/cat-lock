@@ -3,6 +3,7 @@ import os
 from PIL import Image, ImageDraw
 from pystray import Icon, Menu, MenuItem
 
+from src.ui.ui_action_dispatcher import UiActionDispatcher
 from src.util.path_util import get_packaged_path
 from src.util.web_browser_util import open_about, open_buy_me_a_coffee, open_faq
 
@@ -26,10 +27,10 @@ class TrayIcon:
         self.main.config.save()
 
     def open_settings(self) -> None:
-        self.main.send_ui_action("settings")
+        self.main.send_ui_action(UiActionDispatcher.SETTINGS)
 
     def open_user_guide(self) -> None:
-        self.main.send_ui_action("user_guide")
+        self.main.send_ui_action(UiActionDispatcher.USER_GUIDE)
 
     def open(self) -> None:
         image = self._get_icon_image()
