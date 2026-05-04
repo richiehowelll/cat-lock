@@ -34,6 +34,21 @@ pip install pyinstaller
 ```bash
 pyinstaller --onefile --add-data="./resources/img/icon.ico:./resources/img/" --add-data="./resources/img/icon.png:./resources/img/" --add-data="./resources/config/config.json:./resources/config/" --icon="./resources/img/icon.ico" --hidden-import plyer.platforms.win.notification --noconsole --name="CatLock" "./src/main.py"
 ```
+
+## Run tests
+
+Install the project dependencies first:
+
+```bash
+pip install -r requirements.txt
+```
+
+Run the unit tests:
+
+```bash
+python -m unittest discover -s tests
+```
+
 ## Caveats
 - Relies on https://github.com/boppreh/keyboard/ which only has full support for Windows
 - OS bound hotkeys take precedence such as `ctrl+alt+del` (this way you don't get locked out if something goes wrong)

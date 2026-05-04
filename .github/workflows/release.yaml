@@ -28,6 +28,17 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
+      - name: Compile source and tests
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path src,tests -Recurse -File -Include *.py | ForEach-Object {
+            python -m py_compile $_.FullName
+          }
+
+      - name: Run tests
+        shell: pwsh
+        run: python -m unittest discover -s tests
+
       - name: Check tag and VERSION match
         shell: bash
         run: |
