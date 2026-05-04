@@ -23,4 +23,3 @@ def send_notification_in_thread(notifications_enabled: bool) -> None:
     if notifications_enabled:
         notification_thread = threading.Thread(target=send_lock_notification, daemon=True)
         notification_thread.start()
-        notification_thread.join()

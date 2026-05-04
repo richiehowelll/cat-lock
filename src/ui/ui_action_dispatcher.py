@@ -3,6 +3,8 @@ from queue import Empty, Queue
 
 class UiActionDispatcher:
     SETTINGS = "settings"
+    TOGGLE_NOTIFICATIONS = "toggle_notifications"
+    UPDATE_AVAILABLE = "update_available"
     USER_GUIDE = "user_guide"
     QUIT = "quit"
 
@@ -28,6 +30,16 @@ class UiActionDispatcher:
             if action == self.SETTINGS:
                 from src.ui.settings_window import SettingsWindow
                 SettingsWindow(self.main).open()
+            elif action == self.TOGGLE_NOTIFICATIONS:
+                self.main.config.notifications_enabled = (
+                    not self.main.config.notifications_enabled
+                )
+                self.main.config.save()
+            elif action == self.UPDATE_AVAILABLE:
+                if not self.main.program_running:
+                    continue
+                from src.ui.update_window import UpdateWindow
+                UpdateWindow(self.main).prompt_update()
             elif action == self.USER_GUIDE:
                 from src.ui.user_guide_window import UserGuideWindow
                 UserGuideWindow(self.main).open()

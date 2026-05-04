@@ -23,8 +23,7 @@ class TrayIcon:
         return self._icon_image
 
     def toggle_notifications(self) -> None:
-        self.main.config.notifications_enabled = not self.main.config.notifications_enabled
-        self.main.config.save()
+        self.main.send_ui_action(UiActionDispatcher.TOGGLE_NOTIFICATIONS)
 
     def open_settings(self) -> None:
         self.main.send_ui_action(UiActionDispatcher.SETTINGS)

@@ -1,8 +1,11 @@
 import threading
+import logging
 
 import keyboard
 
 from src.os_controller.notifications import send_notification_in_thread
+
+KEY_CODES_TO_BLOCK = range(150)
 
 
 class KeyboardLockController:
@@ -27,20 +30,38 @@ class KeyboardLockController:
         with self.state_lock:
             self.is_locked = True
 
-        self.blocked_keys.clear()
-        for i in range(150):
-            keyboard.block_key(i)
-            self.blocked_keys.add(i)
+        blocked_keys = set()
+        try:
+            for key_code in KEY_CODES_TO_BLOCK:
+                keyboard.block_key(key_code)
+                blocked_keys.add(key_code)
+        except Exception:
+            self._unblock_keys(blocked_keys)
+            with self.state_lock:
+                self.is_locked = False
+                self.lock_request_pending = False
+            raise
+
+        with self.state_lock:
+            self.blocked_keys = blocked_keys
 
         send_notification_in_thread(self.notifications_enabled_getter())
 
     def unlock_keyboard(self) -> None:
-        for key in self.blocked_keys:
-            keyboard.unblock_key(key)
-        self.blocked_keys.clear()
+        with self.state_lock:
+            blocked_keys = self.blocked_keys
+            self.blocked_keys = set()
+            self.is_locked = False
+            self.lock_request_pending = False
+
+        self._unblock_keys(blocked_keys)
         # Clear keyboard's internal pressed-state cache after blocked-key use.
         keyboard.stash_state()
 
-        with self.state_lock:
-            self.is_locked = False
-            self.lock_request_pending = False
+    @staticmethod
+    def _unblock_keys(blocked_keys) -> None:
+        for key in blocked_keys:
+            try:
+                keyboard.unblock_key(key)
+            except Exception:
+                logging.exception("Failed to unblock key code: %s", key)

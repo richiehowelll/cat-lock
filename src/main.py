@@ -84,7 +84,7 @@ class CatLockCore:
 
     def start(self) -> None:
         try:
-            UpdateWindow(self).prompt_update()
+            UpdateWindow(self).check_for_update_in_thread()
             # hack to prevent right ctrl sticking
             keyboard.remap_key('right ctrl', 'left ctrl')
 
