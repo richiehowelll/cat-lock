@@ -1,4 +1,3 @@
-import tkinter as tk
 from tkinter import messagebox
 
 from src.util.update_util import is_update_available
@@ -11,8 +10,9 @@ class UpdateWindow:
 
     def prompt_update(self):
         if is_update_available():
-            self.main.root = tk.Tk()
-            self.main.root.withdraw()
-            if messagebox.askyesno('Update Available', 'A new version of CatLock is available. Do you want to update?'):
+            if messagebox.askyesno(
+                "Update Available",
+                "A new version of CatLock is available. Do you want to update?",
+                parent=self.main.tk_root,
+            ):
                 open_download()
-            self.main.root.destroy()

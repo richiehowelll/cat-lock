@@ -1,5 +1,6 @@
 import threading
 import time
+import tkinter as tk
 from queue import Queue
 
 import keyboard
@@ -24,6 +25,8 @@ class CatLockCore:
         # Cross-thread lock requests are funneled through the main loop.
         self.show_overlay_queue = Queue()
         self.config = Config()
+        self.tk_root = tk.Tk()
+        self.tk_root.withdraw()
         self.root = None
         self.program_running = True
         self.ui_dispatcher = UiActionDispatcher(self)
@@ -57,7 +60,11 @@ class CatLockCore:
 
     def unlock_keyboard(self, event=None) -> None:
         if self.root:
-            self.root.destroy()
+            try:
+                if self.root.winfo_exists():
+                    self.root.destroy()
+            except tk.TclError:
+                pass
             self.root = None
         self.keyboard_lock.unlock_keyboard()
 
@@ -76,30 +83,34 @@ class CatLockCore:
         icon.stop()
 
     def start(self) -> None:
-        UpdateWindow(self).prompt_update()
-        # hack to prevent right ctrl sticking
-        keyboard.remap_key('right ctrl', 'left ctrl')
+        try:
+            UpdateWindow(self).prompt_update()
+            # hack to prevent right ctrl sticking
+            keyboard.remap_key('right ctrl', 'left ctrl')
 
-        if not self.config.user_guide_shown:
-            from src.ui.user_guide_window import UserGuideWindow
-            UserGuideWindow(self).open()
+            if not self.config.user_guide_shown:
+                from src.ui.user_guide_window import UserGuideWindow
+                UserGuideWindow(self).open()
 
-        while self.program_running or self.ui_dispatcher.has_pending_actions():
-            # Tk windows are created from this loop; background callbacks only
-            # enqueue UI actions.
-            self.ui_dispatcher.process_actions()
-            if not self.show_overlay_queue.empty():
-                self.show_overlay_queue.get(block=False)
-                # One active overlay session consumes all pending lock signals.
-                while not self.show_overlay_queue.empty():
+            while self.program_running or self.ui_dispatcher.has_pending_actions():
+                # Tk windows are created from this loop; background callbacks only
+                # enqueue UI actions.
+                self.tk_root.update()
+                self.ui_dispatcher.process_actions()
+                if not self.show_overlay_queue.empty():
                     self.show_overlay_queue.get(block=False)
-                overlay = OverlayWindow(main=self)
-                keyboard.stash_state()
-                overlay.open()
-            time.sleep(.1)
-
-        self.hotkey_listener.stop()
-        release_single_instance_guard()
+                    # One active overlay session consumes all pending lock signals.
+                    while not self.show_overlay_queue.empty():
+                        self.show_overlay_queue.get(block=False)
+                    overlay = OverlayWindow(main=self)
+                    keyboard.stash_state()
+                    overlay.open()
+                time.sleep(.1)
+        finally:
+            self.hotkey_listener.stop()
+            self.unlock_keyboard()
+            self.tk_root.destroy()
+            release_single_instance_guard()
 
 
 if __name__ == "__main__":

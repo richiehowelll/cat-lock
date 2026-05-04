@@ -36,7 +36,7 @@ class OverlayWindow:
         y_percent = getattr(self.main.config, "overlay_y_percent", 25)
         overlay_width, overlay_height, x, y = compute_overlay_geometry(y_percent)
 
-        self.main.root = tk.Tk()
+        self.main.root = tk.Toplevel(self.main.tk_root)
         self.main.root.overrideredirect(True)
         self.main.root.geometry(f"{overlay_width}x{overlay_height}+{x}+{y}")
         self.main.root.attributes("-topmost", True)
@@ -80,7 +80,8 @@ class OverlayWindow:
         self._start_fade_in(target_alpha=target_alpha)
         self._poll_for_shutdown()
 
-        self.main.root.mainloop()
+        self.main.tk_root.wait_window(self.main.root)
+        self.main.root = None
 
     def _poll_for_shutdown(self) -> None:
         if not self.main.root or not self.main.root.winfo_exists():
