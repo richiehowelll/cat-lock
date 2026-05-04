@@ -68,5 +68,5 @@ def _show_already_running_message() -> None:
         None,
         "CatLock is already running.",
         "CatLock",
-        0x00000040,
+        0x00000040, # Displays OK button + Information Icon
     )
