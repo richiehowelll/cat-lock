@@ -46,6 +46,9 @@ class Config:
                 self.overlay_monitor_index = None
         if self.overlay_monitor_index is not None and self.overlay_monitor_index < 0:
             self.overlay_monitor_index = None
+        self.overlay_monitor_fingerprint = config.get("overlayMonitorFingerprint")
+        if not isinstance(self.overlay_monitor_fingerprint, dict):
+            self.overlay_monitor_fingerprint = None
 
         self.user_guide_shown = bool(config.get("userGuideShown", False))
 
@@ -76,6 +79,7 @@ class Config:
             "notificationsEnabled": self.notifications_enabled,
             "overlayYPercent": self.overlay_y_percent,
             "overlayMonitorIndex": self.overlay_monitor_index,
+            "overlayMonitorFingerprint": self.overlay_monitor_fingerprint,
             "userGuideShown": self.user_guide_shown,
             "overlayOpacityRevision": self.overlay_opacity_revision,
         }

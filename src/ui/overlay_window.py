@@ -42,9 +42,15 @@ class OverlayWindow:
     def open(self) -> None:
         y_percent = getattr(self.main.config, "overlay_y_percent", 25)
         monitor_index = getattr(self.main.config, "overlay_monitor_index", None)
+        monitor_fingerprint = getattr(
+            self.main.config,
+            "overlay_monitor_fingerprint",
+            None,
+        )
         overlay_width, overlay_height, x, y = compute_overlay_geometry(
             y_percent,
             monitor_index=monitor_index,
+            monitor_fingerprint=monitor_fingerprint,
         )
 
         self.main.root = tk.Toplevel(self.main.tk_root)

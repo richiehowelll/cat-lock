@@ -1,7 +1,11 @@
 import tkinter as tk
 from tkinter import ttk
 
-from src.ui.overlay_geometry import compute_overlay_geometry, get_monitor_options
+from src.ui.overlay_geometry import (
+    compute_overlay_geometry,
+    get_monitor_fingerprint,
+    get_monitor_options,
+)
 from src.ui.overlay_style import OVERLAY_BORDER_COLOR, build_overlay_content
 
 
@@ -23,11 +27,13 @@ class SettingsWindow:
 
         y_percent = self.y_pos_var.get()
         monitor_index = self._selected_monitor_index()
+        monitor_fingerprint = self._selected_monitor_fingerprint()
         overlay_width, overlay_height, x, y = compute_overlay_geometry(
             y_percent,
             overlay_width=420,
             overlay_height=120,
             monitor_index=monitor_index,
+            monitor_fingerprint=monitor_fingerprint,
         )
 
         self.preview.geometry(f"{overlay_width}x{overlay_height}+{x}+{y}")
@@ -36,11 +42,13 @@ class SettingsWindow:
     def _create_preview_window(self):
         y_percent = self.y_pos_var.get()
         monitor_index = self._selected_monitor_index()
+        monitor_fingerprint = self._selected_monitor_fingerprint()
         overlay_width, overlay_height, x, y = compute_overlay_geometry(
             y_percent,
             overlay_width=420,
             overlay_height=120,
             monitor_index=monitor_index,
+            monitor_fingerprint=monitor_fingerprint,
         )
 
         if self.preview is not None and self.preview.winfo_exists():
@@ -70,6 +78,9 @@ class SettingsWindow:
         self.main.config.opacity = self.opacity_var.get() / 100.0
         self.main.config.overlay_y_percent = self.y_pos_var.get()
         self.main.config.overlay_monitor_index = self._selected_monitor_index()
+        self.main.config.overlay_monitor_fingerprint = (
+            self._selected_monitor_fingerprint()
+        )
         self.main.config.save()
 
         if self.preview is not None and self.preview.winfo_exists():
@@ -253,3 +264,7 @@ class SettingsWindow:
             return getattr(self.main.config, "overlay_monitor_index", None)
 
         return self.monitor_label_to_index.get(self.monitor_var.get())
+
+    def _selected_monitor_fingerprint(self):
+        monitor_index = self._selected_monitor_index()
+        return get_monitor_fingerprint(monitor_index)

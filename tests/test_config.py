@@ -34,6 +34,13 @@ class ConfigTest(unittest.TestCase):
                         "notificationsEnabled": False,
                         "overlayYPercent": 150,
                         "overlayMonitorIndex": "2",
+                        "overlayMonitorFingerprint": {
+                            "x": 0,
+                            "y": 0,
+                            "width": 1920,
+                            "height": 1080,
+                            "isPrimary": True,
+                        },
                         "overlayOpacityRevision": 0,
                     },
                     f,
@@ -47,6 +54,16 @@ class ConfigTest(unittest.TestCase):
             self.assertEqual(config.hotkey, "ctrl+x")
             self.assertEqual(config.overlay_y_percent, 100)
             self.assertEqual(config.overlay_monitor_index, 2)
+            self.assertEqual(
+                config.overlay_monitor_fingerprint,
+                {
+                    "x": 0,
+                    "y": 0,
+                    "width": 1920,
+                    "height": 1080,
+                    "isPrimary": True,
+                },
+            )
             self.assertEqual(config.opacity, config_module.DEFAULT_OPACITY)
             self.assertEqual(
                 config.overlay_opacity_revision,
@@ -59,6 +76,16 @@ class ConfigTest(unittest.TestCase):
             self.assertEqual(saved_config["overlayYPercent"], 100)
             self.assertEqual(saved_config["overlayMonitorIndex"], 2)
             self.assertEqual(
+                saved_config["overlayMonitorFingerprint"],
+                {
+                    "x": 0,
+                    "y": 0,
+                    "width": 1920,
+                    "height": 1080,
+                    "isPrimary": True,
+                },
+            )
+            self.assertEqual(
                 saved_config["overlayOpacityRevision"],
                 config_module.OVERLAY_OPACITY_REVISION,
             )
@@ -67,7 +94,13 @@ class ConfigTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             user_config_path = os.path.join(temp_dir, "config.json")
             with open(user_config_path, "w", encoding="utf-8") as f:
-                json.dump({"overlayMonitorIndex": -1}, f)
+                json.dump(
+                    {
+                        "overlayMonitorIndex": -1,
+                        "overlayMonitorFingerprint": "bad",
+                    },
+                    f,
+                )
 
             with patch("src.config.config.get_config_path", return_value=user_config_path), patch(
                 "src.config.config.open_about",
@@ -75,6 +108,7 @@ class ConfigTest(unittest.TestCase):
                 config = config_module.Config()
 
             self.assertIsNone(config.overlay_monitor_index)
+            self.assertIsNone(config.overlay_monitor_fingerprint)
 
 
 if __name__ == "__main__":
