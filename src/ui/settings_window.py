@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from src.ui.overlay_geometry import compute_overlay_geometry
-from src.ui.overlay_style import OVERLAY_TEXT_COLOR, OVERLAY_FONT, OVERLAY_BG_COLOR, OVERLAY_BORDER_COLOR
+from src.ui.overlay_style import OVERLAY_BORDER_COLOR, build_overlay_content
 
 
 class SettingsWindow:
@@ -10,8 +10,11 @@ class SettingsWindow:
         self.main = main
         self.root = None
         self.preview = None
+        self.opacity_value_label = None
+        self.position_value_label = None
 
     def _update_preview(self, *args):
+        self._update_value_labels()
         if self.preview is None or not self.preview.winfo_exists():
             return
 
@@ -49,18 +52,13 @@ class SettingsWindow:
         outer = tk.Frame(self.preview, bg=OVERLAY_BORDER_COLOR)
         outer.pack(expand=True, fill="both", padx=1, pady=1)
 
-        inner = tk.Frame(outer, bg=OVERLAY_BG_COLOR, padx=20, pady=16)
-        inner.pack(expand=True, fill="both")
+        build_overlay_content(outer, preview=True)
 
-        label = tk.Label(
-            inner,
-            text="CatLock preview",
-            fg=OVERLAY_TEXT_COLOR,
-            bg=OVERLAY_BG_COLOR,
-            font=OVERLAY_FONT,
-            justify="center",
-        )
-        label.pack(expand=True, fill="both")
+    def _update_value_labels(self) -> None:
+        if self.opacity_value_label is not None:
+            self.opacity_value_label.configure(text=f"{self.opacity_var.get()}%")
+        if self.position_value_label is not None:
+            self.position_value_label.configure(text=f"{self.y_pos_var.get()}%")
 
     def _on_save(self):
         self.main.config.opacity = self.opacity_var.get() / 100.0
@@ -81,7 +79,7 @@ class SettingsWindow:
         self.root.title("CatLock Settings")
         self.root.resizable(False, False)
         self.root.protocol("WM_DELETE_WINDOW", self._on_cancel)
-        self.root.minsize(320, 190)  # a bit wider
+        self.root.minsize(360, 230)
 
         style = ttk.Style(self.root)
         for candidate in ("vista", "default"):
@@ -93,8 +91,10 @@ class SettingsWindow:
 
         base_font = ("Segoe UI", 10)
         style.configure("TLabel", font=base_font)
-        style.configure("Header.TLabel", font=("Segoe UI", 11, "bold"))
-        style.configure("TButton", font=base_font, padding=(8, 4))
+        style.configure("Header.TLabel", font=("Segoe UI", 12, "bold"))
+        style.configure("Subtle.TLabel", font=("Segoe UI", 9), foreground="#5f6368")
+        style.configure("Value.TLabel", font=("Segoe UI", 10, "bold"))
+        style.configure("TButton", font=base_font, padding=(10, 5))
 
         # Opacity slider: 5-90%, map to 0.05-0.90
         current_opacity_pct = int(self.main.config.opacity * 100)
@@ -110,15 +110,23 @@ class SettingsWindow:
             value=getattr(self.main.config, "overlay_y_percent", 25)
         )
 
-        # ---- Layout ----
-        container = ttk.Frame(self.root, padding=10)
+        container = ttk.Frame(self.root, padding=(16, 14, 16, 14))
         container.pack(fill="both", expand=True)
+        container.columnconfigure(0, weight=1)
+
+        header = ttk.Label(
+            container,
+            text="Overlay Settings",
+            style="Header.TLabel",
+        )
+        header.grid(row=0, column=0, sticky="w")
 
         sub = ttk.Label(
             container,
-            text="Adjust the overlay while the keyboard is locked.",
+            text="Tune how the lock prompt appears on screen.",
+            style="Subtle.TLabel",
         )
-        sub.grid(row=0, column=0, sticky="w", pady=(0, 8))
+        sub.grid(row=1, column=0, sticky="w", pady=(2, 14))
 
         opacity_frame = ttk.Frame(container)
         opacity_frame.grid(row=2, column=0, sticky="ew", pady=(4, 0))
@@ -127,6 +135,12 @@ class SettingsWindow:
         ttk.Label(opacity_frame, text="Overlay opacity:").grid(
             row=0, column=0, sticky="w"
         )
+        self.opacity_value_label = ttk.Label(
+            opacity_frame,
+            text=f"{self.opacity_var.get()}%",
+            style="Value.TLabel",
+        )
+        self.opacity_value_label.grid(row=0, column=1, sticky="e")
         opacity_slider = ttk.Scale(
             opacity_frame,
             from_=5,
@@ -135,15 +149,21 @@ class SettingsWindow:
             variable=self.opacity_var,
             command=lambda v: self._update_preview(),
         )
-        opacity_slider.grid(row=1, column=0, sticky="ew", pady=(2, 0))
+        opacity_slider.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(4, 0))
 
         position_frame = ttk.Frame(container)
-        position_frame.grid(row=3, column=0, sticky="ew", pady=(10, 0))
+        position_frame.grid(row=3, column=0, sticky="ew", pady=(14, 0))
         position_frame.columnconfigure(0, weight=1)
 
         ttk.Label(position_frame, text="Vertical position:").grid(
             row=0, column=0, sticky="w"
         )
+        self.position_value_label = ttk.Label(
+            position_frame,
+            text=f"{self.y_pos_var.get()}%",
+            style="Value.TLabel",
+        )
+        self.position_value_label.grid(row=0, column=1, sticky="e")
         y_slider = ttk.Scale(
             position_frame,
             from_=0,
@@ -152,10 +172,10 @@ class SettingsWindow:
             variable=self.y_pos_var,
             command=lambda v: self._update_preview(),
         )
-        y_slider.grid(row=1, column=0, sticky="ew", pady=(2, 0))
+        y_slider.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(4, 0))
 
         buttons = ttk.Frame(container)
-        buttons.grid(row=4, column=0, pady=(14, 0), sticky="ew")
+        buttons.grid(row=4, column=0, pady=(18, 0), sticky="ew")
         buttons.columnconfigure(0, weight=1)
 
         btn_container = ttk.Frame(buttons)
@@ -176,8 +196,10 @@ class SettingsWindow:
             width=10,
         )
         cancel_btn.pack(side="left")
+        save_btn.focus_set()
 
         self._create_preview_window()
+        self._update_value_labels()
 
         self.root.update_idletasks()
         self.root.lift()

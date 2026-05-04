@@ -1,7 +1,11 @@
 import tkinter as tk
 
 from src.ui.overlay_geometry import compute_overlay_geometry
-from src.ui.overlay_style import OVERLAY_BG_COLOR, OVERLAY_BORDER_COLOR, OVERLAY_FONT, OVERLAY_TEXT_COLOR
+from src.ui.overlay_style import (
+    OVERLAY_BORDER_COLOR,
+    build_overlay_content,
+    set_overlay_hover,
+)
 
 
 class OverlayWindow:
@@ -47,32 +51,17 @@ class OverlayWindow:
         )
         outer.pack(expand=True, fill="both", padx=1, pady=1)
 
-        inner = tk.Frame(
-            outer,
-            bg=OVERLAY_BG_COLOR,
-            padx=20,
-            pady=16,
+        content = build_overlay_content(outer, unlock_callback=self.main.unlock_keyboard)
+        outer.bind("<Button-1>", self.main.unlock_keyboard)
+        self.main.root.bind("<Enter>", lambda event: set_overlay_hover(content, True))
+        self.main.root.bind(
+            "<Leave>",
+            lambda event: self.main.root.after(
+                20,
+                self._clear_hover_if_pointer_left,
+                content,
+            ),
         )
-        inner.pack(expand=True, fill="both")
-
-        text = (
-            "CatLock\n\n"
-            "Keyboard is locked.\n"
-            "Click this box to unlock."
-        )
-
-        label = tk.Label(
-            inner,
-            text=text,
-            fg=OVERLAY_TEXT_COLOR,
-            bg=OVERLAY_BG_COLOR,
-            font=OVERLAY_FONT,
-            justify="center",
-        )
-        label.pack(expand=True, fill="both")
-
-        for widget in (outer, inner, label):
-            widget.bind("<Button-1>", self.main.unlock_keyboard)
 
         self.main.lock_keyboard()
 
@@ -90,3 +79,16 @@ class OverlayWindow:
             self.main.unlock_keyboard()
             return
         self.main.root.after(100, self._poll_for_shutdown)
+
+    def _clear_hover_if_pointer_left(self, content) -> None:
+        if not self.main.root or not self.main.root.winfo_exists():
+            return
+
+        pointer_x, pointer_y = self.main.root.winfo_pointerxy()
+        left = self.main.root.winfo_rootx()
+        top = self.main.root.winfo_rooty()
+        right = left + self.main.root.winfo_width()
+        bottom = top + self.main.root.winfo_height()
+
+        if not (left <= pointer_x < right and top <= pointer_y < bottom):
+            set_overlay_hover(content, False)
