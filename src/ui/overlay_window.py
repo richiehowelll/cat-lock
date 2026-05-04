@@ -3,14 +3,17 @@ import tkinter as tk
 from src.ui.overlay_geometry import compute_overlay_geometry
 from src.ui.overlay_style import (
     OVERLAY_BORDER_COLOR,
+    OVERLAY_CLICK_BORDER_COLOR,
     build_overlay_content,
     set_overlay_hover,
+    set_overlay_pressed,
 )
 
 
 class OverlayWindow:
     def __init__(self, main):
         self.main = main
+        self.unlock_feedback_running = False
 
     def _start_fade_in(self, target_alpha: float, duration_ms: int = 180, steps: int = 10):
         # Clamp target alpha
@@ -51,8 +54,10 @@ class OverlayWindow:
         )
         outer.pack(expand=True, fill="both", padx=1, pady=1)
 
-        content = build_overlay_content(outer, unlock_callback=self.main.unlock_keyboard)
-        outer.bind("<Button-1>", self.main.unlock_keyboard)
+        unlock_callback = lambda event: self._unlock_with_click_feedback(outer, content)
+        content = build_overlay_content(outer, unlock_callback=unlock_callback)
+        outer.bind("<Button-1>", unlock_callback)
+        outer.configure(cursor="hand2")
         self.main.root.bind("<Enter>", lambda event: set_overlay_hover(content, True))
         self.main.root.bind(
             "<Leave>",
@@ -92,3 +97,14 @@ class OverlayWindow:
 
         if not (left <= pointer_x < right and top <= pointer_y < bottom):
             set_overlay_hover(content, False)
+
+    def _unlock_with_click_feedback(self, outer, content) -> None:
+        if self.unlock_feedback_running:
+            return
+
+        self.unlock_feedback_running = True
+        outer.configure(bg=OVERLAY_CLICK_BORDER_COLOR)
+        set_overlay_pressed(content, True)
+
+        if self.main.root and self.main.root.winfo_exists():
+            self.main.root.after(90, self.main.unlock_keyboard)

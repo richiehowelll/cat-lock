@@ -2,6 +2,8 @@ import tkinter as tk
 
 OVERLAY_BG_COLOR = "#202124"
 OVERLAY_BORDER_COLOR = "#5f6368"
+OVERLAY_CLICK_BORDER_COLOR = "#8ab4f8"
+OVERLAY_CLICK_BG_COLOR = "#2d3440"
 OVERLAY_HOVER_BG_COLOR = "#26282c"
 OVERLAY_TEXT_COLOR = "#f1f3f4"
 OVERLAY_MUTED_TEXT_COLOR = "#bdc1c6"
@@ -52,12 +54,18 @@ def build_overlay_content(parent, unlock_callback=None, preview: bool = False):
     if unlock_callback is not None:
         for widget in widgets:
             widget.bind("<Button-1>", unlock_callback)
+            widget.configure(cursor="hand2")
 
     return inner
 
 
 def set_overlay_hover(content, hovered: bool) -> None:
     color = OVERLAY_HOVER_BG_COLOR if hovered else OVERLAY_BG_COLOR
+    _set_bg((content, *content.winfo_children()), color)
+
+
+def set_overlay_pressed(content, pressed: bool) -> None:
+    color = OVERLAY_CLICK_BG_COLOR if pressed else OVERLAY_HOVER_BG_COLOR
     _set_bg((content, *content.winfo_children()), color)
 
 
