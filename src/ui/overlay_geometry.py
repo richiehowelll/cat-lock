@@ -29,7 +29,7 @@ def compute_overlay_geometry(
 ):
     """
     Compute (width, height, x, y) for the overlay, centered horizontally.
-    y_percent: 0–100 percent from top of monitor where the overlay's top-left should be placed (roughly).
+    y_percent: 0-100 percent from top of monitor where the overlay's top-left should be placed (roughly).
     """
     monitor = get_target_monitor()
 

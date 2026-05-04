@@ -96,7 +96,7 @@ class SettingsWindow:
         style.configure("Header.TLabel", font=("Segoe UI", 11, "bold"))
         style.configure("TButton", font=base_font, padding=(8, 4))
 
-        # Opacity slider: 5–90%, map to 0.05–0.90
+        # Opacity slider: 5-90%, map to 0.05-0.90
         current_opacity_pct = int(self.main.config.opacity * 100)
         if current_opacity_pct < 5:
             current_opacity_pct = 5
@@ -105,7 +105,7 @@ class SettingsWindow:
 
         self.opacity_var = tk.IntVar(value=current_opacity_pct)
 
-        # Vertical position percent: 0–100 from config
+        # Vertical position percent: 0-100 from config
         self.y_pos_var = tk.IntVar(
             value=getattr(self.main.config, "overlay_y_percent", 25)
         )

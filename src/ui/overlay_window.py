@@ -56,7 +56,7 @@ class OverlayWindow:
         inner.pack(expand=True, fill="both")
 
         text = (
-            "🔒 CatLock\n\n"
+            "CatLock\n\n"
             "Keyboard is locked.\n"
             "Click this box to unlock."
         )

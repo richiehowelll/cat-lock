@@ -24,7 +24,7 @@ Free code signing provided by SignPath.io, certificate by SignPath Foundation.
 
 This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.
 
-CatLock does not collect, transmit, or store personal data. Any third-party libraries used by this project operate locally on the user’s system.
+CatLock does not collect, transmit, or store personal data. Any third-party libraries used by this project operate locally on the user's system.
 
 ## Build an executable
 ```bash

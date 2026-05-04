@@ -46,14 +46,14 @@ class TrayIcon:
 
             Menu.SEPARATOR,
 
-            MenuItem("Settings…", self.open_settings),
+            MenuItem("Settings...", self.open_settings),
             MenuItem(
                 "Show notifications",
                 self.toggle_notifications,
                 checked=lambda item: self.main.config.notifications_enabled,
             ),
 
-            MenuItem("Support ☕", open_buy_me_a_coffee),
+            MenuItem("Support CatLock", open_buy_me_a_coffee),
 
             Menu.SEPARATOR,
 

@@ -51,10 +51,10 @@ class UserGuideWindow:
         hotkey_display = hotkey.upper()
 
         text = (
-            f"• Press {hotkey_display} to lock your keyboard.\n"
-            "• A small overlay will appear on your screen.\n"
-            "• Click the overlay box to unlock.\n"
-            "• You can adjust the overlay's opacity and position anytime\n"
+            f"- Press {hotkey_display} to lock your keyboard.\n"
+            "- A small overlay will appear on your screen.\n"
+            "- Click the overlay box to unlock.\n"
+            "- You can adjust the overlay's opacity and position anytime\n"
             "  from the CatLock tray menu under Settings."
         )
 
