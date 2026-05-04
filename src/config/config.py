@@ -38,6 +38,15 @@ class Config:
         if self.overlay_y_percent > 100:
             self.overlay_y_percent = 100
 
+        self.overlay_monitor_index = config.get("overlayMonitorIndex")
+        if self.overlay_monitor_index is not None:
+            try:
+                self.overlay_monitor_index = int(self.overlay_monitor_index)
+            except (TypeError, ValueError):
+                self.overlay_monitor_index = None
+        if self.overlay_monitor_index is not None and self.overlay_monitor_index < 0:
+            self.overlay_monitor_index = None
+
         self.user_guide_shown = bool(config.get("userGuideShown", False))
 
         # One-time migration: force all users to the new default opacity
@@ -66,6 +75,7 @@ class Config:
             "opacity": self.opacity,
             "notificationsEnabled": self.notifications_enabled,
             "overlayYPercent": self.overlay_y_percent,
+            "overlayMonitorIndex": self.overlay_monitor_index,
             "userGuideShown": self.user_guide_shown,
             "overlayOpacityRevision": self.overlay_opacity_revision,
         }

@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-from src.ui.overlay_geometry import compute_overlay_geometry
+from src.ui.overlay_geometry import compute_overlay_geometry, get_monitor_options
 from src.ui.overlay_style import OVERLAY_BORDER_COLOR, build_overlay_content
 
 
@@ -12,6 +12,9 @@ class SettingsWindow:
         self.preview = None
         self.opacity_value_label = None
         self.position_value_label = None
+        self.monitor_options = []
+        self.monitor_label_to_index = {}
+        self.monitor_var = None
 
     def _update_preview(self, *args):
         self._update_value_labels()
@@ -19,10 +22,12 @@ class SettingsWindow:
             return
 
         y_percent = self.y_pos_var.get()
+        monitor_index = self._selected_monitor_index()
         overlay_width, overlay_height, x, y = compute_overlay_geometry(
             y_percent,
             overlay_width=420,
             overlay_height=120,
+            monitor_index=monitor_index,
         )
 
         self.preview.geometry(f"{overlay_width}x{overlay_height}+{x}+{y}")
@@ -30,10 +35,12 @@ class SettingsWindow:
 
     def _create_preview_window(self):
         y_percent = self.y_pos_var.get()
+        monitor_index = self._selected_monitor_index()
         overlay_width, overlay_height, x, y = compute_overlay_geometry(
             y_percent,
             overlay_width=420,
             overlay_height=120,
+            monitor_index=monitor_index,
         )
 
         if self.preview is not None and self.preview.winfo_exists():
@@ -62,6 +69,7 @@ class SettingsWindow:
     def _on_save(self):
         self.main.config.opacity = self.opacity_var.get() / 100.0
         self.main.config.overlay_y_percent = self.y_pos_var.get()
+        self.main.config.overlay_monitor_index = self._selected_monitor_index()
         self.main.config.save()
 
         if self.preview is not None and self.preview.winfo_exists():
@@ -78,7 +86,7 @@ class SettingsWindow:
         self.root.title("CatLock Settings")
         self.root.resizable(False, False)
         self.root.protocol("WM_DELETE_WINDOW", self._on_cancel)
-        self.root.minsize(360, 230)
+        self.root.minsize(360, 270)
 
         self._configure_style()
 
@@ -92,6 +100,8 @@ class SettingsWindow:
         self.y_pos_var = tk.IntVar(
             value=getattr(self.main.config, "overlay_y_percent", 25)
         )
+        self._load_monitor_options()
+        self.monitor_var = tk.StringVar(value=self._selected_monitor_label())
 
         container = ttk.Frame(self.root, padding=(16, 14, 16, 14))
         container.pack(fill="both", expand=True)
@@ -109,9 +119,11 @@ class SettingsWindow:
             style="Subtle.TLabel",
         ).grid(row=1, column=0, sticky="w", pady=(2, 14))
 
+        self._build_monitor_row(container, row=2)
+
         self._build_slider_row(
             container,
-            row=2,
+            row=3,
             label="Overlay opacity",
             variable=self.opacity_var,
             from_=5,
@@ -120,7 +132,7 @@ class SettingsWindow:
         )
         self._build_slider_row(
             container,
-            row=3,
+            row=4,
             label="Vertical position",
             variable=self.y_pos_var,
             from_=0,
@@ -130,7 +142,7 @@ class SettingsWindow:
         )
 
         buttons = ttk.Frame(container)
-        buttons.grid(row=4, column=0, pady=(18, 0))
+        buttons.grid(row=5, column=0, pady=(18, 0))
 
         save_btn = ttk.Button(
             buttons,
@@ -204,3 +216,40 @@ class SettingsWindow:
             command=lambda v: self._update_preview(),
         )
         slider.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(4, 0))
+
+    def _build_monitor_row(self, parent, row: int) -> None:
+        frame = ttk.Frame(parent)
+        frame.grid(row=row, column=0, sticky="ew")
+        frame.columnconfigure(0, weight=1)
+
+        ttk.Label(frame, text="Monitor").grid(row=0, column=0, sticky="w")
+
+        monitor_picker = ttk.Combobox(
+            frame,
+            textvariable=self.monitor_var,
+            values=list(self.monitor_label_to_index.keys()),
+            state="readonly",
+        )
+        monitor_picker.grid(row=1, column=0, sticky="ew", pady=(4, 0))
+        monitor_picker.bind("<<ComboboxSelected>>", self._update_preview)
+
+    def _load_monitor_options(self) -> None:
+        self.monitor_options = get_monitor_options()
+        self.monitor_label_to_index = {
+            label: monitor_index
+            for monitor_index, label in self.monitor_options
+        }
+
+    def _selected_monitor_label(self) -> str:
+        configured_index = getattr(self.main.config, "overlay_monitor_index", None)
+        for monitor_index, label in self.monitor_options:
+            if monitor_index == configured_index:
+                return label
+
+        return self.monitor_options[0][1]
+
+    def _selected_monitor_index(self):
+        if self.monitor_var is None:
+            return getattr(self.main.config, "overlay_monitor_index", None)
+
+        return self.monitor_label_to_index.get(self.monitor_var.get())

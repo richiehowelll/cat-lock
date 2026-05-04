@@ -41,7 +41,11 @@ class OverlayWindow:
 
     def open(self) -> None:
         y_percent = getattr(self.main.config, "overlay_y_percent", 25)
-        overlay_width, overlay_height, x, y = compute_overlay_geometry(y_percent)
+        monitor_index = getattr(self.main.config, "overlay_monitor_index", None)
+        overlay_width, overlay_height, x, y = compute_overlay_geometry(
+            y_percent,
+            monitor_index=monitor_index,
+        )
 
         self.main.root = tk.Toplevel(self.main.tk_root)
         self.main.root.overrideredirect(True)
