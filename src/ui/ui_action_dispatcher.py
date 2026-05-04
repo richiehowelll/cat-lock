@@ -4,6 +4,7 @@ from queue import Empty, Queue
 class UiActionDispatcher:
     SETTINGS = "settings"
     TOGGLE_NOTIFICATIONS = "toggle_notifications"
+    UNLOCK = "unlock"
     UPDATE_AVAILABLE = "update_available"
     USER_GUIDE = "user_guide"
     QUIT = "quit"
@@ -35,6 +36,8 @@ class UiActionDispatcher:
                     not self.main.config.notifications_enabled
                 )
                 self.main.config.save()
+            elif action == self.UNLOCK:
+                self.main.unlock_keyboard()
             elif action == self.UPDATE_AVAILABLE:
                 if not self.main.program_running:
                     continue

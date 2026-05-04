@@ -31,6 +31,9 @@ class TrayIcon:
     def open_user_guide(self) -> None:
         self.main.send_ui_action(UiActionDispatcher.USER_GUIDE)
 
+    def unlock_keyboard(self) -> None:
+        self.main.send_ui_action(UiActionDispatcher.UNLOCK)
+
     def open(self) -> None:
         image = self._get_icon_image()
 
@@ -43,6 +46,7 @@ class TrayIcon:
 
         menu = Menu(
             MenuItem(lock_label, self.main.send_hotkey_signal),
+            MenuItem("Unlock keyboard", self.unlock_keyboard),
 
             Menu.SEPARATOR,
 

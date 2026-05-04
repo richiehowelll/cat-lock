@@ -90,6 +90,9 @@ class OverlayWindow:
     def _poll_for_shutdown(self) -> None:
         if not self.main.root or not self.main.root.winfo_exists():
             return
+        self.main.ui_dispatcher.process_actions()
+        if not self.main.root or not self.main.root.winfo_exists():
+            return
         if not self.main.program_running:
             self.main.unlock_keyboard()
             return
