@@ -12,11 +12,15 @@ from src.os_controller.tray_icon import TrayIcon
 from src.ui.overlay_window import OverlayWindow
 from src.ui.update_window import UpdateWindow
 from src.ui.ui_action_dispatcher import UiActionDispatcher
-from src.util.lockfile_handler import check_lockfile, remove_lockfile
+from src.util.single_instance_guard import (
+    acquire_single_instance_guard,
+    release_single_instance_guard,
+)
 
 
 class CatLockCore:
     def __init__(self) -> None:
+        acquire_single_instance_guard()
         # Cross-thread lock requests are funneled through the main loop.
         self.show_overlay_queue = Queue()
         self.config = Config()
@@ -67,13 +71,11 @@ class CatLockCore:
         self.ui_dispatcher.enqueue(action)
 
     def quit_program(self, icon, item) -> None:
-        remove_lockfile()
         self.program_running = False
         self.send_ui_action(UiActionDispatcher.QUIT)
         icon.stop()
 
     def start(self) -> None:
-        check_lockfile()
         UpdateWindow(self).prompt_update()
         # hack to prevent right ctrl sticking
         keyboard.remap_key('right ctrl', 'left ctrl')
@@ -97,6 +99,7 @@ class CatLockCore:
             time.sleep(.1)
 
         self.hotkey_listener.stop()
+        release_single_instance_guard()
 
 
 if __name__ == "__main__":
