@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
+from src.config.config import DEFAULT_OPACITY
 from src.ui.overlay_geometry import (
     compute_overlay_geometry,
     get_monitor_fingerprint,
@@ -92,6 +93,13 @@ class SettingsWindow:
             self.preview.destroy()
         self.root.destroy()
 
+    def _on_reset(self):
+        self.opacity_var.set(int(DEFAULT_OPACITY * 100))
+        self.y_pos_var.set(25)
+        if self.monitor_options:
+            self.monitor_var.set(self.monitor_options[0][1])
+        self._update_preview()
+
     def open(self):
         self.root = tk.Toplevel(self.main.tk_root)
         self.root.title("CatLock Settings")
@@ -128,13 +136,22 @@ class SettingsWindow:
             container,
             text="Tune how the lock prompt appears on screen.",
             style="Subtle.TLabel",
-        ).grid(row=1, column=0, sticky="w", pady=(2, 14))
+        ).grid(row=1, column=0, sticky="w", pady=(2, 2))
 
-        self._build_monitor_row(container, row=2)
+        reset_button = ttk.Label(
+            container,
+            text="Reset to defaults",
+            style="Link.TLabel",
+            cursor="hand2",
+        )
+        reset_button.grid(row=2, column=0, sticky="w", pady=(0, 14))
+        reset_button.bind("<Button-1>", lambda event: self._on_reset())
+
+        self._build_monitor_row(container, row=3)
 
         self._build_slider_row(
             container,
-            row=3,
+            row=4,
             label="Overlay opacity",
             variable=self.opacity_var,
             from_=5,
@@ -143,7 +160,7 @@ class SettingsWindow:
         )
         self._build_slider_row(
             container,
-            row=4,
+            row=5,
             label="Vertical position",
             variable=self.y_pos_var,
             from_=0,
@@ -152,11 +169,11 @@ class SettingsWindow:
             pady=(14, 0),
         )
 
-        buttons = ttk.Frame(container)
-        buttons.grid(row=5, column=0, pady=(18, 0))
+        action_buttons = ttk.Frame(container)
+        action_buttons.grid(row=6, column=0, pady=(18, 0))
 
         save_btn = ttk.Button(
-            buttons,
+            action_buttons,
             text="Save",
             command=self._on_save,
             width=10,
@@ -164,7 +181,7 @@ class SettingsWindow:
         save_btn.pack(side="left", padx=(0, 8))
 
         ttk.Button(
-            buttons,
+            action_buttons,
             text="Cancel",
             command=self._on_cancel,
             width=10,
@@ -194,6 +211,7 @@ class SettingsWindow:
         style.configure("TLabel", font=base_font)
         style.configure("Header.TLabel", font=("Segoe UI", 12, "bold"))
         style.configure("Subtle.TLabel", font=("Segoe UI", 9), foreground="#5f6368")
+        style.configure("Link.TLabel", font=("Segoe UI", 9), foreground="#2563eb")
         style.configure("Value.TLabel", font=("Segoe UI", 10, "bold"))
         style.configure("TButton", font=base_font, padding=(10, 5))
 
