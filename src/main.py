@@ -28,6 +28,7 @@ class CatLockCore:
         self.tk_root = tk.Tk()
         self.tk_root.withdraw()
         self.root = None
+        self.open_windows = set()
         self.program_running = True
         self.ui_dispatcher = UiActionDispatcher(self)
         self.keyboard_lock = KeyboardLockController(
@@ -67,6 +68,21 @@ class CatLockCore:
                 pass
             self.root = None
         self.keyboard_lock.unlock_keyboard()
+
+    def register_window(self, window) -> None:
+        self.open_windows.add(window)
+
+    def unregister_window(self, window) -> None:
+        self.open_windows.discard(window)
+
+    def close_open_windows(self) -> None:
+        for window in list(self.open_windows):
+            try:
+                if window.winfo_exists():
+                    window.destroy()
+            except tk.TclError:
+                pass
+            self.open_windows.discard(window)
 
     def send_hotkey_signal(self) -> None:
         # A pending request represents one overlay session waiting to start.
@@ -108,6 +124,7 @@ class CatLockCore:
                 time.sleep(.1)
         finally:
             self.hotkey_listener.stop()
+            self.close_open_windows()
             self.unlock_keyboard()
             self.tk_root.destroy()
             release_single_instance_guard()

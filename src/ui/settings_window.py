@@ -86,11 +86,13 @@ class SettingsWindow:
 
         if self.preview is not None and self.preview.winfo_exists():
             self.preview.destroy()
+            self.preview = None
         self.root.destroy()
 
     def _on_cancel(self):
         if self.preview is not None and self.preview.winfo_exists():
             self.preview.destroy()
+            self.preview = None
         self.root.destroy()
 
     def _on_reset(self):
@@ -102,6 +104,7 @@ class SettingsWindow:
 
     def open(self):
         self.root = tk.Toplevel(self.main.tk_root)
+        self.main.register_window(self.root)
         self.root.title("CatLock Settings")
         self.root.resizable(False, False)
         self.root.protocol("WM_DELETE_WINDOW", self._on_cancel)
@@ -190,13 +193,32 @@ class SettingsWindow:
 
         self._create_preview_window()
         self._update_value_labels()
+        self._poll_actions()
 
         self.root.update_idletasks()
         self.root.lift()
         self.root.focus_force()
         self.root.grab_set()
 
-        self.main.tk_root.wait_window(self.root)
+        try:
+            self.main.tk_root.wait_window(self.root)
+        finally:
+            self.main.unregister_window(self.root)
+            if self.preview is not None:
+                try:
+                    if self.preview.winfo_exists():
+                        self.preview.destroy()
+                except tk.TclError:
+                    pass
+                self.preview = None
+
+    def _poll_actions(self) -> None:
+        if self.root is None or not self.root.winfo_exists():
+            return
+        self.main.ui_dispatcher.process_actions()
+        if self.root is None or not self.root.winfo_exists():
+            return
+        self.root.after(100, self._poll_actions)
 
     def _configure_style(self) -> None:
         style = ttk.Style(self.root)

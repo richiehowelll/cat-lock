@@ -17,6 +17,7 @@ class UserGuideWindow:
 
     def open(self):
         self.root = tk.Toplevel(self.main.tk_root)
+        self.main.register_window(self.root)
         self.root.title("Welcome to CatLock")
         self.root.resizable(False, False)
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
@@ -75,13 +76,25 @@ class UserGuideWindow:
         )
         got_it_btn.grid(row=0, column=0)
         got_it_btn.focus_set()
+        self._poll_actions()
 
         self.root.update_idletasks()
         self.root.lift()
         self.root.focus_force()
         self.root.grab_set()
 
-        self.main.tk_root.wait_window(self.root)
+        try:
+            self.main.tk_root.wait_window(self.root)
+        finally:
+            self.main.unregister_window(self.root)
+
+    def _poll_actions(self) -> None:
+        if self.root is None or not self.root.winfo_exists():
+            return
+        self.main.ui_dispatcher.process_actions()
+        if self.root is None or not self.root.winfo_exists():
+            return
+        self.root.after(100, self._poll_actions)
 
     def _configure_style(self) -> None:
         style = ttk.Style(self.root)

@@ -48,5 +48,6 @@ class UiActionDispatcher:
                 UserGuideWindow(self.main).open()
             elif action == self.QUIT:
                 self.main.program_running = False
+                self.main.close_open_windows()
                 self.main.unlock_keyboard()
                 self.main.hotkey_listener.stop()
