@@ -18,7 +18,7 @@ class TrayIcon:
         self.main.config.save()
 
     def open_settings(self) -> None:
-        SettingsWindow(self.main).open()
+        self.main.open_settings()
 
     def open_user_guide(self) -> None:
         UserGuideWindow(self.main).open()

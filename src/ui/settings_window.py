@@ -64,6 +64,7 @@ class SettingsWindow:
 
     def _on_save(self):
         self.main.config.opacity = self.opacity_var.get() / 100.0
+        self.main.config.hotkey = self.hotkey_var.get().strip().lower()
         self.main.config.overlay_y_percent = self.y_pos_var.get()
         self.main.config.save()
 
@@ -109,6 +110,7 @@ class SettingsWindow:
         self.y_pos_var = tk.IntVar(
             value=getattr(self.main.config, "overlay_y_percent", 25)
         )
+        self.hotkey_var = tk.StringVar(value=self.main.config.hotkey)
 
         # ---- Layout ----
         container = ttk.Frame(self.root, padding=10)
@@ -119,6 +121,14 @@ class SettingsWindow:
             text="Adjust the overlay while the keyboard is locked.",
         )
         sub.grid(row=0, column=0, sticky="w", pady=(0, 8))
+        keyboard_frame = ttk.Frame(container)
+        keyboard_frame.grid(row=1, column=0, sticky="ew", pady=(4, 0))
+        keyboard_frame.columnconfigure(0, weight=1)
+        
+        hotkey_label = ttk.Label(keyboard_frame, text="Hotkey:")
+        hotkey_label.grid(row=0, column=0, sticky="w")
+        hotkey_entry = tk.Entry(keyboard_frame, textvariable=self.hotkey_var)
+        hotkey_entry.grid(row=1, column=0, sticky="w")
 
         opacity_frame = ttk.Frame(container)
         opacity_frame.grid(row=2, column=0, sticky="ew", pady=(4, 0))
