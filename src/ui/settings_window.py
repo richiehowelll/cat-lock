@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
+import threading
+import keyboard
 
 from src.ui.overlay_geometry import compute_overlay_geometry
 from src.ui.overlay_style import OVERLAY_TEXT_COLOR, OVERLAY_FONT, OVERLAY_BG_COLOR, OVERLAY_BORDER_COLOR
@@ -129,8 +131,50 @@ class SettingsWindow:
         
         hotkey_label = ttk.Label(keyboard_frame, text="Hotkey:")
         hotkey_label.grid(row=0, column=0, sticky="w")
-        hotkey_entry = tk.Entry(keyboard_frame, textvariable=self.hotkey_var)
+        
+        def finish_hotkey_capture(new_hotkey):
+            if new_hotkey:
+                self.hotkey_var.set(new_hotkey.lower())
+
+            set_hotkey_btn.config(text="Set")
+            set_hotkey_btn.config(state="normal")
+
+        def start_hotkey_capture():
+            set_hotkey_btn.config(text="Press hotkey...")
+            set_hotkey_btn.config(state="disabled")
+
+            def capture():
+                MODIFIERS = {"ctrl", "shift", "alt", "windows"}
+
+                while True:
+                    new_hotkey = keyboard.read_hotkey(suppress=False).lower()
+
+                    keys = new_hotkey.split("+")
+
+                    has_modifier = any(k in MODIFIERS for k in keys)
+                    has_normal_key = any(k not in MODIFIERS for k in keys)
+
+                    if has_modifier and has_normal_key:
+                        break
+
+                self.root.after(0, lambda: finish_hotkey_capture(new_hotkey))
+
+            threading.Thread(target=capture, daemon=True).start()
+
+
+        hotkey_entry = ttk.Entry(
+            keyboard_frame,
+            textvariable=self.hotkey_var,
+            state="readonly"
+        )
         hotkey_entry.grid(row=1, column=0, sticky="w")
+
+        set_hotkey_btn = ttk.Button(
+            keyboard_frame,
+            text="Set",
+            command=start_hotkey_capture
+        )
+        set_hotkey_btn.grid(row=1, column=1, padx=(8, 0))
 
         opacity_frame = ttk.Frame(container)
         opacity_frame.grid(row=2, column=0, sticky="ew", pady=(4, 0))
