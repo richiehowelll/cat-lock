@@ -26,6 +26,7 @@ class CatLockCore:
         self.program_running = True
         self.blocked_keys = set()
         self.changing_hotkey_queue = Queue()
+        self.hotkey_listener = HotkeyListener(self)
         self.start_hotkey_listener()
         self.clear_pressed_events_thread = threading.Thread(target=clear_pressed_events, daemon=True)
         self.clear_pressed_events_thread.start()
@@ -37,7 +38,10 @@ class CatLockCore:
         TrayIcon(main=self).open()
 
     def start_hotkey_listener(self) -> None:
-        HotkeyListener(self).start_hotkey_listener_thread()
+        self.hotkey_listener.start_hotkey_listener_thread()
+
+    def stop_hotkey_listener(self) -> None:
+        self.hotkey_listener.stop_hotkey_listener()
 
     def lock_keyboard(self) -> None:
         self.blocked_keys.clear()

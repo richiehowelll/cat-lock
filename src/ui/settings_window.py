@@ -63,10 +63,12 @@ class SettingsWindow:
         label.pack(expand=True, fill="both")
 
     def _on_save(self):
+        self.main.stop_hotkey_listener()
         self.main.config.opacity = self.opacity_var.get() / 100.0
         self.main.config.hotkey = self.hotkey_var.get().strip().lower()
         self.main.config.overlay_y_percent = self.y_pos_var.get()
         self.main.config.save()
+        self.main.start_hotkey_listener()
 
         if self.preview is not None and self.preview.winfo_exists():
             self.preview.destroy()
