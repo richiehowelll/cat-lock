@@ -1,0 +1,27 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# Build directories
+build/
+dist/
+
+# Python packaging
+*.egg-info/
+*.egg
+*.whl
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
