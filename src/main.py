@@ -11,6 +11,7 @@ from src.os_controller.notifications import send_notification_in_thread
 from src.os_controller.tray_icon import TrayIcon
 from src.ui.overlay_window import OverlayWindow
 from src.ui.update_window import UpdateWindow
+from src.ui.settings_window import SettingsWindow
 from src.util.lockfile_handler import check_lockfile, remove_lockfile
 
 
@@ -25,17 +26,22 @@ class CatLockCore:
         self.program_running = True
         self.blocked_keys = set()
         self.changing_hotkey_queue = Queue()
+        self.hotkey_listener = HotkeyListener(self)
         self.start_hotkey_listener()
         self.clear_pressed_events_thread = threading.Thread(target=clear_pressed_events, daemon=True)
         self.clear_pressed_events_thread.start()
         self.tray_icon_thread = threading.Thread(target=self.create_tray_icon, daemon=True)
         self.tray_icon_thread.start()
+        self.open_settings_queue = Queue()
 
     def create_tray_icon(self) -> None:
         TrayIcon(main=self).open()
 
     def start_hotkey_listener(self) -> None:
-        HotkeyListener(self).start_hotkey_listener_thread()
+        self.hotkey_listener.start_hotkey_listener_thread()
+
+    def stop_hotkey_listener(self) -> None:
+        self.hotkey_listener.stop_hotkey_listener()
 
     def lock_keyboard(self) -> None:
         self.blocked_keys.clear()
@@ -60,6 +66,9 @@ class CatLockCore:
         self.program_running = False
         self.unlock_keyboard()
         icon.stop()
+        
+    def open_settings(self) -> None:
+        self.open_settings_queue.put(True)
 
     def start(self) -> None:
         check_lockfile()
@@ -77,6 +86,9 @@ class CatLockCore:
                 overlay = OverlayWindow(main=self)
                 keyboard.stash_state()
                 overlay.open()
+            if not self.open_settings_queue.empty():
+                self.open_settings_queue.get(block=False)
+                SettingsWindow(self).open()
             time.sleep(.1)
 
 

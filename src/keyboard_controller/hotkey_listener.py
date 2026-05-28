@@ -16,6 +16,24 @@ class HotkeyListener:
                 self.main.hotkey_thread.join()
             self.main.hotkey_thread = threading.Thread(target=self.hotkey_listener, daemon=True)
             self.main.hotkey_thread.start()
+            
+    def stop_hotkey_listener(self) -> None:
+        with self.main.hotkey_lock:
+            self.main.listen_for_hotkey = False
+
+            try:
+                keyboard.unhook_all_hotkeys()
+            except AttributeError:
+                pass
+
+            if (
+                self.main.hotkey_thread
+                and self.main.hotkey_thread.is_alive()
+                and threading.current_thread() is not self.main.hotkey_thread
+            ):
+                self.main.hotkey_thread.join(timeout=1)
+
+            self.main.hotkey_thread = None
 
     def hotkey_listener(self) -> None:
         keyboard.add_hotkey(self.main.config.hotkey, self.main.send_hotkey_signal, suppress=False)
