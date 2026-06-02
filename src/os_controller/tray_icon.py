@@ -3,8 +3,7 @@ import os
 from PIL import Image, ImageDraw
 from pystray import Icon, Menu, MenuItem
 
-from src.ui.settings_window import SettingsWindow
-from src.ui.user_guide_window import UserGuideWindow
+from src.ui.ui_action_dispatcher import UiActionDispatcher
 from src.util.path_util import get_packaged_path
 from src.util.web_browser_util import open_about, open_buy_me_a_coffee, open_faq
 
@@ -12,22 +11,31 @@ from src.util.web_browser_util import open_about, open_buy_me_a_coffee, open_faq
 class TrayIcon:
     def __init__(self, main):
         self.main = main
+        self._icon_image = None
+
+    def _get_icon_image(self):
+        if self._icon_image is None:
+            path = os.path.join("resources", "img", "icon.png")
+            image = Image.open(get_packaged_path(path))
+            draw = ImageDraw.Draw(image)
+            draw.rectangle((16, 16, 48, 48), fill="white")
+            self._icon_image = image
+        return self._icon_image
 
     def toggle_notifications(self) -> None:
-        self.main.config.notifications_enabled = not self.main.config.notifications_enabled
-        self.main.config.save()
+        self.main.send_ui_action(UiActionDispatcher.TOGGLE_NOTIFICATIONS)
 
     def open_settings(self) -> None:
-        SettingsWindow(self.main).open()
+        self.main.send_ui_action(UiActionDispatcher.SETTINGS)
 
     def open_user_guide(self) -> None:
-        UserGuideWindow(self.main).open()
+        self.main.send_ui_action(UiActionDispatcher.USER_GUIDE)
+
+    def unlock_keyboard(self) -> None:
+        self.main.send_ui_action(UiActionDispatcher.UNLOCK)
 
     def open(self) -> None:
-        path = os.path.join("resources", "img", "icon.png")
-        image = Image.open(get_packaged_path(path))
-        draw = ImageDraw.Draw(image)
-        draw.rectangle((16, 16, 48, 48), fill="white")
+        image = self._get_icon_image()
 
         hotkey = getattr(self.main.config, "hotkey", None)
         if hotkey:
@@ -38,17 +46,18 @@ class TrayIcon:
 
         menu = Menu(
             MenuItem(lock_label, self.main.send_hotkey_signal),
+            MenuItem("Unlock keyboard", self.unlock_keyboard),
 
             Menu.SEPARATOR,
 
-            MenuItem("Settings…", self.open_settings),
+            MenuItem("Settings...", self.open_settings),
             MenuItem(
                 "Show notifications",
                 self.toggle_notifications,
                 checked=lambda item: self.main.config.notifications_enabled,
             ),
 
-            MenuItem("Support ☕", open_buy_me_a_coffee),
+            MenuItem("Support CatLock", open_buy_me_a_coffee),
 
             Menu.SEPARATOR,
 

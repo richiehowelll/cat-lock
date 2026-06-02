@@ -24,16 +24,33 @@ Free code signing provided by SignPath.io, certificate by SignPath Foundation.
 
 This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.
 
-CatLock does not collect, transmit, or store personal data. Any third-party libraries used by this project operate locally on the user’s system.
+CatLock does not collect, transmit, or store personal data. Any third-party libraries used by this project operate locally on the user's system.
 
 ## Build an executable
 ```bash
-pip install pyinstaller
+pip install pyinstaller==6.11.1
 ```
 
 ```bash
-pyinstaller --onefile --add-data="./resources/img/icon.ico:./resources/img/" --add-data="./resources/img/icon.png:./resources/img/" --add-data="./resources/config/config.json:./resources/config/" --icon="./resources/img/icon.ico" --hidden-import plyer.platforms.win.notification --noconsole --name="CatLock" "./src/main.py"
+pyinstaller --onedir --contents-directory="_internal" --add-data="./resources/img/icon.ico:./resources/img/" --add-data="./resources/img/icon.png:./resources/img/" --add-data="./resources/config/config.json:./resources/config/" --icon="./resources/img/icon.ico" --hidden-import plyer.platforms.win.notification --noconsole --name="CatLock" "./src/main.py"
 ```
+
+The release build ships the installer plus a `CatLockPortable.zip` folder bundle. Keep the full portable folder together; `CatLock.exe` depends on the adjacent `_internal` directory.
+
+## Run tests
+
+Install the project dependencies first:
+
+```bash
+pip install -r requirements.txt
+```
+
+Run the unit tests:
+
+```bash
+python -m unittest discover -s tests
+```
+
 ## Caveats
 - Relies on https://github.com/boppreh/keyboard/ which only has full support for Windows
 - OS bound hotkeys take precedence such as `ctrl+alt+del` (this way you don't get locked out if something goes wrong)

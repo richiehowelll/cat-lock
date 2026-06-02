@@ -14,7 +14,7 @@ PrivilegesRequired=lowest
 CloseApplications=force
 
 [Files]
-Source: "..\dist\CatLock.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dist\CatLock\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{autoprograms}\CatLock"; Filename: "{app}\CatLock.exe"
@@ -28,10 +28,11 @@ Name: "startup"; Description: "Add CatLock to Windows startup"; GroupDescription
 Root: HKCU; Subkey: "SOFTWARE\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "CatLock"; ValueData: """{app}\CatLock.exe"""; Flags: uninsdeletevalue; Tasks: startup
 
 [InstallDelete]
+Type: filesandordirs; Name: "{app}\_internal"
 Type: files; Name: "{userstartup}\CatLock.lnk"
 
 [Run]
-Filename: "https://catlock.app/about/"; Description: "Visit website"; Flags: postinstall shellexec
+Filename: "https://catlock.app/about/"; Description: "Visit website"; Flags: postinstall shellexec skipifsilent
 
 [Code]
 var
@@ -41,7 +42,7 @@ procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
   begin
-    if MsgBox('Do you want to start CatLock now?', mbConfirmation, MB_YESNO) = IDYES then
+    if (not WizardSilent) and (MsgBox('Do you want to start CatLock now?', mbConfirmation, MB_YESNO) = IDYES) then
     begin
       Exec(ExpandConstant('{app}\CatLock.exe'), '', '', SW_SHOWNORMAL, ewNoWait, ErrorCode);
     end;

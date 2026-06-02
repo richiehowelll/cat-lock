@@ -1,12 +1,19 @@
 import tkinter as tk
 
 from src.ui.overlay_geometry import compute_overlay_geometry
-from src.ui.overlay_style import OVERLAY_BG_COLOR, OVERLAY_BORDER_COLOR, OVERLAY_FONT, OVERLAY_TEXT_COLOR
+from src.ui.overlay_style import (
+    OVERLAY_BORDER_COLOR,
+    OVERLAY_CLICK_BORDER_COLOR,
+    build_overlay_content,
+    set_overlay_hover,
+    set_overlay_pressed,
+)
 
 
 class OverlayWindow:
     def __init__(self, main):
         self.main = main
+        self.unlock_feedback_running = False
 
     def _start_fade_in(self, target_alpha: float, duration_ms: int = 180, steps: int = 10):
         # Clamp target alpha
@@ -34,9 +41,19 @@ class OverlayWindow:
 
     def open(self) -> None:
         y_percent = getattr(self.main.config, "overlay_y_percent", 25)
-        overlay_width, overlay_height, x, y = compute_overlay_geometry(y_percent)
+        monitor_index = getattr(self.main.config, "overlay_monitor_index", None)
+        monitor_fingerprint = getattr(
+            self.main.config,
+            "overlay_monitor_fingerprint",
+            None,
+        )
+        overlay_width, overlay_height, x, y = compute_overlay_geometry(
+            y_percent,
+            monitor_index=monitor_index,
+            monitor_fingerprint=monitor_fingerprint,
+        )
 
-        self.main.root = tk.Tk()
+        self.main.root = tk.Toplevel(self.main.tk_root)
         self.main.root.overrideredirect(True)
         self.main.root.geometry(f"{overlay_width}x{overlay_height}+{x}+{y}")
         self.main.root.attributes("-topmost", True)
@@ -47,36 +64,60 @@ class OverlayWindow:
         )
         outer.pack(expand=True, fill="both", padx=1, pady=1)
 
-        inner = tk.Frame(
-            outer,
-            bg=OVERLAY_BG_COLOR,
-            padx=20,
-            pady=16,
+        unlock_callback = lambda event: self._unlock_with_click_feedback(outer, content)
+        content = build_overlay_content(outer, unlock_callback=unlock_callback)
+        outer.bind("<Button-1>", unlock_callback)
+        outer.configure(cursor="hand2")
+        self.main.root.bind("<Enter>", lambda event: set_overlay_hover(content, True))
+        self.main.root.bind(
+            "<Leave>",
+            lambda event: self.main.root.after(
+                20,
+                self._clear_hover_if_pointer_left,
+                content,
+            ),
         )
-        inner.pack(expand=True, fill="both")
-
-        text = (
-            "🔒 CatLock\n\n"
-            "Keyboard is locked.\n"
-            "Click this box to unlock."
-        )
-
-        label = tk.Label(
-            inner,
-            text=text,
-            fg=OVERLAY_TEXT_COLOR,
-            bg=OVERLAY_BG_COLOR,
-            font=OVERLAY_FONT,
-            justify="center",
-        )
-        label.pack(expand=True, fill="both")
-
-        for widget in (outer, inner, label):
-            widget.bind("<Button-1>", self.main.unlock_keyboard)
 
         self.main.lock_keyboard()
 
         target_alpha = getattr(self.main.config, "opacity", 0.8)
         self._start_fade_in(target_alpha=target_alpha)
+        self._poll_for_shutdown()
 
-        self.main.root.mainloop()
+        self.main.tk_root.wait_window(self.main.root)
+        self.main.root = None
+
+    def _poll_for_shutdown(self) -> None:
+        if not self.main.root or not self.main.root.winfo_exists():
+            return
+        self.main.ui_dispatcher.process_actions()
+        if not self.main.root or not self.main.root.winfo_exists():
+            return
+        if not self.main.program_running:
+            self.main.unlock_keyboard()
+            return
+        self.main.root.after(100, self._poll_for_shutdown)
+
+    def _clear_hover_if_pointer_left(self, content) -> None:
+        if not self.main.root or not self.main.root.winfo_exists():
+            return
+
+        pointer_x, pointer_y = self.main.root.winfo_pointerxy()
+        left = self.main.root.winfo_rootx()
+        top = self.main.root.winfo_rooty()
+        right = left + self.main.root.winfo_width()
+        bottom = top + self.main.root.winfo_height()
+
+        if not (left <= pointer_x < right and top <= pointer_y < bottom):
+            set_overlay_hover(content, False)
+
+    def _unlock_with_click_feedback(self, outer, content) -> None:
+        if self.unlock_feedback_running:
+            return
+
+        self.unlock_feedback_running = True
+        outer.configure(bg=OVERLAY_CLICK_BORDER_COLOR)
+        set_overlay_pressed(content, True)
+
+        if self.main.root and self.main.root.winfo_exists():
+            self.main.root.after(90, self.main.unlock_keyboard)

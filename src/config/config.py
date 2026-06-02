@@ -1,4 +1,6 @@
 import json
+import logging
+import os
 import os.path
 import shutil
 
@@ -12,12 +14,13 @@ OVERLAY_OPACITY_REVISION = 1  # bump this if we need to change default again
 
 
 def load():
+    config_path = get_config_path()
     try:
-        with open(get_config_path(), "r") as f:
+        with open(config_path, "r", encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        shutil.copy(get_packaged_path(BUNDLED_CONFIG_FILE), get_config_path())
-        with open(get_config_path(), "r") as f:
+        shutil.copy(get_packaged_path(BUNDLED_CONFIG_FILE), config_path)
+        with open(config_path, "r", encoding="utf-8") as f:
             return json.load(f)
 
 
@@ -34,6 +37,18 @@ class Config:
             self.overlay_y_percent = 0
         if self.overlay_y_percent > 100:
             self.overlay_y_percent = 100
+
+        self.overlay_monitor_index = config.get("overlayMonitorIndex")
+        if self.overlay_monitor_index is not None:
+            try:
+                self.overlay_monitor_index = int(self.overlay_monitor_index)
+            except (TypeError, ValueError):
+                self.overlay_monitor_index = None
+        if self.overlay_monitor_index is not None and self.overlay_monitor_index < 0:
+            self.overlay_monitor_index = None
+        self.overlay_monitor_fingerprint = config.get("overlayMonitorFingerprint")
+        if not isinstance(self.overlay_monitor_fingerprint, dict):
+            self.overlay_monitor_fingerprint = None
 
         self.user_guide_shown = bool(config.get("userGuideShown", False))
 
@@ -56,15 +71,21 @@ class Config:
             self.save()
 
     def save(self) -> None:
-        print(f'saving to: {get_config_path()}')
-        with open(get_config_path(), "w") as f:
-            config = {
-                "hotkey": self.hotkey,
-                "opacity": self.opacity,
-                "notificationsEnabled": self.notifications_enabled,
-                "overlayYPercent": self.overlay_y_percent,
-                "userGuideShown": self.user_guide_shown,
-                "overlayOpacityRevision": self.overlay_opacity_revision,
-            }
+        config_path = get_config_path()
+        temp_path = f"{config_path}.tmp"
+        config = {
+            "hotkey": self.hotkey,
+            "opacity": self.opacity,
+            "notificationsEnabled": self.notifications_enabled,
+            "overlayYPercent": self.overlay_y_percent,
+            "overlayMonitorIndex": self.overlay_monitor_index,
+            "overlayMonitorFingerprint": self.overlay_monitor_fingerprint,
+            "userGuideShown": self.user_guide_shown,
+            "overlayOpacityRevision": self.overlay_opacity_revision,
+        }
+
+        logging.debug("Saving config to: %s", config_path)
+        with open(temp_path, "w", encoding="utf-8") as f:
             json.dump(config, f)
+        os.replace(temp_path, config_path)
 
