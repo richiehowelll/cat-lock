@@ -1,3 +1,5 @@
+import os
+import sys
 import threading
 import time
 import tkinter as tk
@@ -17,6 +19,25 @@ from src.util.single_instance_guard import (
     acquire_single_instance_guard,
     release_single_instance_guard,
 )
+from src.util.path_util import get_packaged_path
+
+
+def smoke_test() -> None:
+    """Validate frozen-build resources without starting app side effects."""
+    root = tk.Tk()
+    root.withdraw()
+    root.update()
+    root.destroy()
+
+    required_files = (
+        ("resources", "img", "icon.ico"),
+        ("resources", "img", "icon.png"),
+        ("resources", "config", "config.json"),
+    )
+    for path_parts in required_files:
+        path = get_packaged_path(os.path.join(*path_parts))
+        if not os.path.exists(path):
+            raise FileNotFoundError(path)
 
 
 class CatLockCore:
@@ -131,5 +152,8 @@ class CatLockCore:
 
 
 if __name__ == "__main__":
-    core = CatLockCore()
-    core.start()
+    if "--smoke-test" in sys.argv:
+        smoke_test()
+    else:
+        core = CatLockCore()
+        core.start()

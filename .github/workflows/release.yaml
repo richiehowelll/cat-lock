@@ -3,7 +3,7 @@ name: Build & Release CatLock
 on:
   push:
     tags:
-      - "v*.*.*"   # e.g. v1.2.0
+      - "v*.*.*"
 
 permissions:
   contents: write
@@ -11,6 +11,8 @@ permissions:
 jobs:
   build-windows:
     runs-on: windows-latest
+    outputs:
+      app_signing_artifact_id: ${{ steps.upload-app-signing-zip.outputs.artifact-id }}
 
     steps:
       - name: Checkout
@@ -26,7 +28,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pyinstaller
+          pip install pyinstaller==6.11.1
 
       - name: Compile source and tests
         shell: pwsh
@@ -42,7 +44,7 @@ jobs:
       - name: Check tag and VERSION match
         shell: bash
         run: |
-          TAG_NAME="${GITHUB_REF_NAME}"   # e.g. v1.2.0
+          TAG_NAME="${GITHUB_REF_NAME}"
           FILE_VERSION=$(python -c "import sys; sys.path.append('src'); from version import VERSION; print(VERSION)")
           echo "Tag: $TAG_NAME"
           echo "VERSION in code: $FILE_VERSION"
@@ -51,10 +53,11 @@ jobs:
             exit 1
           fi
 
-      - name: Build CatLock exe with PyInstaller
+      - name: Build CatLock onedir with PyInstaller
         shell: pwsh
         run: |
-          pyinstaller --onefile `
+          pyinstaller --onedir `
+            --contents-directory "_internal" `
             --add-data "resources/img/icon.ico;resources/img/" `
             --add-data "resources/img/icon.png;resources/img/" `
             --add-data "resources/config/config.json;resources/config/" `
@@ -63,6 +66,103 @@ jobs:
             --noconsole `
             --name "CatLock" `
             "src/main.py"
+
+      - name: Smoke test frozen app
+        shell: pwsh
+        run: .\dist\CatLock\CatLock.exe --smoke-test
+
+      - name: Package unsigned onedir artifact
+        shell: pwsh
+        run: Compress-Archive -Path "dist\CatLock" -DestinationPath "catlock-onedir-unsigned.zip" -Force
+
+      - name: Package app exe for signing
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "signing-input" -Force | Out-Null
+          Copy-Item "dist\CatLock\CatLock.exe" "signing-input\CatLock.exe" -Force
+          Compress-Archive -Path "signing-input\CatLock.exe" -DestinationPath "catlock-app-unsigned.zip" -Force
+
+      - name: Upload unsigned onedir artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: catlock-onedir-unsigned
+          path: catlock-onedir-unsigned.zip
+
+      - name: Upload unsigned app exe signing package
+        id: upload-app-signing-zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: catlock-app-unsigned-zip
+          path: catlock-app-unsigned.zip
+
+  sign-app:
+    needs: build-windows
+    runs-on: ubuntu-latest
+
+    permissions:
+      actions: read
+      contents: read
+
+    steps:
+      - name: Sign app exe with SignPath
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: "${{ secrets.SIGNPATH_API_TOKEN }}"
+          organization-id: "${{ secrets.SIGNPATH_ORG_ID }}"
+          project-slug: "cat-lock"
+          signing-policy-slug: "release-signing"
+          github-artifact-id: "${{ needs.build-windows.outputs.app_signing_artifact_id }}"
+          wait-for-completion: true
+          output-artifact-directory: "signed-app-zip"
+
+      - name: Extract signed app exe
+        run: |
+          unzip -o signed-app-zip/catlock-app-unsigned.zip -d signed-app
+          test -f signed-app/CatLock.exe
+
+      - name: Upload signed app exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: catlock-app-signed
+          path: signed-app/CatLock.exe
+
+  build-installer:
+    needs: sign-app
+    runs-on: windows-latest
+    outputs:
+      installer_signing_artifact_id: ${{ steps.upload-installer-signing-zip.outputs.artifact-id }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Download unsigned onedir artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: catlock-onedir-unsigned
+          path: unsigned
+
+      - name: Download signed app exe
+        uses: actions/download-artifact@v4
+        with:
+          name: catlock-app-signed
+          path: signed-app
+
+      - name: Stage signed onedir bundle
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "dist" -Force | Out-Null
+          Expand-Archive -Path "unsigned\catlock-onedir-unsigned.zip" -DestinationPath "dist" -Force
+          Copy-Item "signed-app\CatLock.exe" "dist\CatLock\CatLock.exe" -Force
+
+      - name: Smoke test signed onedir app
+        shell: pwsh
+        run: .\dist\CatLock\CatLock.exe --smoke-test
 
       - name: Install Inno Setup
         shell: pwsh
@@ -83,16 +183,62 @@ jobs:
             "/DCatLockVersion=$version" `
             "installer\CatLock.iss"
 
-      - name: Upload unsigned artifacts
+      - name: Smoke test installer upgrade layout
+        shell: pwsh
+        run: |
+          $installDir = Join-Path $env:TEMP "CatLockInstallerSmoke"
+          Remove-Item -Path $installDir -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path (Join-Path $installDir "config") -Force | Out-Null
+          '{"hotkey":"ctrl+x","opacity":0.5,"notificationsEnabled":false}' | Set-Content -Path (Join-Path $installDir "config\config.json") -Encoding UTF8
+
+          & ".\build\CatLockSetup.exe" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /DIR="$installDir"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Installer smoke test failed with exit code $LASTEXITCODE"
+          }
+
+          if (-not (Test-Path (Join-Path $installDir "CatLock.exe"))) {
+            throw "Installed CatLock.exe was not found"
+          }
+          if (-not (Test-Path (Join-Path $installDir "_internal"))) {
+            throw "Installed _internal directory was not found"
+          }
+          if (-not (Test-Path (Join-Path $installDir "config\config.json"))) {
+            throw "Existing config was not preserved"
+          }
+
+          & (Join-Path $installDir "CatLock.exe") --smoke-test
+          if ($LASTEXITCODE -ne 0) {
+            throw "Installed app smoke test failed with exit code $LASTEXITCODE"
+          }
+
+      - name: Package portable onedir zip
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "release" -Force | Out-Null
+          Compress-Archive -Path "dist\CatLock" -DestinationPath "release\CatLockPortable.zip" -Force
+
+      - name: Package installer for signing
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "installer-signing-input" -Force | Out-Null
+          Copy-Item "build\CatLockSetup.exe" "installer-signing-input\CatLockSetup.exe" -Force
+          Compress-Archive -Path "installer-signing-input\CatLockSetup.exe" -DestinationPath "catlock-installer-unsigned.zip" -Force
+
+      - name: Upload portable zip
         uses: actions/upload-artifact@v4
         with:
-          name: catlock-unsigned
-          path: |
-            dist/CatLock.exe
-            build/CatLockSetup.exe
+          name: catlock-portable
+          path: release/CatLockPortable.zip
 
-  sign-binaries:
-    needs: build-windows
+      - name: Upload unsigned installer signing package
+        id: upload-installer-signing-zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: catlock-installer-unsigned-zip
+          path: catlock-installer-unsigned.zip
+
+  sign-installer:
+    needs: build-installer
     runs-on: ubuntu-latest
 
     permissions:
@@ -100,63 +246,44 @@ jobs:
       contents: read
 
     steps:
-      - name: Download unsigned artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: catlock-unsigned
-          path: unsigned
-
-      - name: Create unsigned signing package (zip)
-        run: |
-          mkdir -p signing-input
-          cp unsigned/dist/CatLock.exe signing-input/CatLock.exe
-          cp unsigned/build/CatLockSetup.exe signing-input/CatLockSetup.exe
-          (cd signing-input && zip -r ../catlock-unsigned.zip .)
-
-      - name: Upload unsigned zip for SignPath
-        id: upload-unsigned-zip
-        uses: actions/upload-artifact@v4
-        with:
-          name: catlock-unsigned-zip
-          path: catlock-unsigned.zip
-
-      - name: Sign with SignPath
-        id: signpath
+      - name: Sign installer with SignPath
         uses: signpath/github-action-submit-signing-request@v2
         with:
           api-token: "${{ secrets.SIGNPATH_API_TOKEN }}"
           organization-id: "${{ secrets.SIGNPATH_ORG_ID }}"
           project-slug: "cat-lock"
           signing-policy-slug: "release-signing"
-          github-artifact-id: "${{ steps.upload-unsigned-zip.outputs.artifact-id }}"
+          github-artifact-id: "${{ needs.build-installer.outputs.installer_signing_artifact_id }}"
           wait-for-completion: true
-          output-artifact-directory: "signed-zip"
+          output-artifact-directory: "signed-installer-zip"
 
-      - name: Extract signed zip and stage outputs
+      - name: Extract signed installer
         run: |
-          ls -la signed-zip
-          unzip -o signed-zip/catlock-unsigned.zip -d signed-zip/extracted
-          mkdir -p signed
-          cp signed-zip/extracted/CatLock.exe signed/CatLock.exe
-          cp signed-zip/extracted/CatLockSetup.exe signed/CatLockSetup.exe
+          unzip -o signed-installer-zip/catlock-installer-unsigned.zip -d signed-installer
+          test -f signed-installer/CatLockSetup.exe
 
-
-      - name: Upload signed artifacts
+      - name: Upload signed installer
         uses: actions/upload-artifact@v4
         with:
-          name: catlock-signed
-          path: signed/
+          name: catlock-installer-signed
+          path: signed-installer/CatLockSetup.exe
 
   create-release:
-    needs: sign-binaries
+    needs: sign-installer
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download signed artifacts
+      - name: Download signed installer
         uses: actions/download-artifact@v4
         with:
-          name: catlock-signed
-          path: signed
+          name: catlock-installer-signed
+          path: release
+
+      - name: Download portable zip
+        uses: actions/download-artifact@v4
+        with:
+          name: catlock-portable
+          path: release
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -166,7 +293,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            signed/CatLock.exe
-            signed/CatLockSetup.exe
+            release/CatLockSetup.exe
+            release/CatLockPortable.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
