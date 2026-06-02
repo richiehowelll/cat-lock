@@ -11,9 +11,18 @@ New-Item -ItemType Directory -Path (Join-Path $InstallDir "config") -Force | Out
 '{"hotkey":"ctrl+x","opacity":0.5,"notificationsEnabled":false}' |
     Set-Content -Path (Join-Path $InstallDir "config\config.json") -Encoding UTF8
 
-& $installer /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /DIR="$InstallDir"
-if ($LASTEXITCODE -ne 0) {
-    throw "Installer smoke test failed with exit code $LASTEXITCODE"
+$installerProcess = Start-Process `
+    -FilePath $installer `
+    -ArgumentList @(
+        "/VERYSILENT",
+        "/SUPPRESSMSGBOXES",
+        "/NORESTART",
+        "/DIR=$InstallDir"
+    ) `
+    -Wait `
+    -PassThru
+if ($installerProcess.ExitCode -ne 0) {
+    throw "Installer smoke test failed with exit code $($installerProcess.ExitCode)"
 }
 
 if (-not (Test-Path (Join-Path $InstallDir "CatLock.exe"))) {
