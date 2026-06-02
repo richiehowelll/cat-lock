@@ -111,6 +111,7 @@ jobs:
           organization-id: "${{ secrets.SIGNPATH_ORG_ID }}"
           project-slug: "cat-lock"
           signing-policy-slug: "release-signing"
+          artifact-configuration-slug: "catlock-app-exe"
           github-artifact-id: "${{ needs.build-windows.outputs.app_signing_artifact_id }}"
           wait-for-completion: true
           output-artifact-directory: "signed-app-zip"
@@ -229,6 +230,7 @@ jobs:
           organization-id: "${{ secrets.SIGNPATH_ORG_ID }}"
           project-slug: "cat-lock"
           signing-policy-slug: "release-signing"
+          artifact-configuration-slug: "catlock-installer-exe"
           github-artifact-id: "${{ needs.build-installer.outputs.installer_signing_artifact_id }}"
           wait-for-completion: true
           output-artifact-directory: "signed-installer-zip"
