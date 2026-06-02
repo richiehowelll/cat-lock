@@ -32,7 +32,7 @@ pip install pyinstaller==6.11.1
 ```
 
 ```bash
-pyinstaller --onedir --contents-directory="_internal" --add-data="./resources/img/icon.ico:./resources/img/" --add-data="./resources/img/icon.png:./resources/img/" --add-data="./resources/config/config.json:./resources/config/" --icon="./resources/img/icon.ico" --hidden-import plyer.platforms.win.notification --noconsole --name="CatLock" "./src/main.py"
+pyinstaller --onedir --contents-directory="_internal" --add-data="./resources/img/icon.ico;./resources/img/" --add-data="./resources/img/icon.png;./resources/img/" --add-data="./resources/config/config.json;./resources/config/" --icon="./resources/img/icon.ico" --hidden-import plyer.platforms.win.notification --noconsole --name="CatLock" "./src/main.py"
 ```
 
 The release build ships the installer plus a `CatLockPortable.zip` folder bundle. Keep the full portable folder together; `CatLock.exe` depends on the adjacent `_internal` directory.
